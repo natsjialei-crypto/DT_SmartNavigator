@@ -253,6 +253,24 @@ export function FloatBubble({
   const BALL  = 72
   const ENTRY = 72
 
+  const snapToEdge = (x: number, y: number) => {
+    const W = window.innerWidth
+    const H = window.innerHeight
+    const cx = x + BALL / 2
+    const cy = y + BALL / 2
+    // distance to each edge
+    const dLeft   = cx
+    const dRight  = W - cx
+    const dTop    = cy
+    const dBottom = H - cy
+    const min = Math.min(dLeft, dRight, dTop, dBottom)
+    const MARGIN = 8  // gap from screen edge
+    if (min === dRight)  return { x: W - BALL - MARGIN, y: Math.max(MARGIN, Math.min(H - BALL - MARGIN, y)) }
+    if (min === dLeft)   return { x: MARGIN,             y: Math.max(MARGIN, Math.min(H - BALL - MARGIN, y)) }
+    if (min === dBottom) return { x: Math.max(MARGIN, Math.min(W - BALL - MARGIN, x)), y: H - BALL - MARGIN }
+    return                      { x: Math.max(MARGIN, Math.min(W - BALL - MARGIN, x)), y: MARGIN }
+  }
+
   const handleDragStart = (e: React.MouseEvent) => {
     e.preventDefault()
     dragRef.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y }
@@ -267,8 +285,15 @@ export function FloatBubble({
         y: Math.max(0, Math.min(window.innerHeight - BALL, dragRef.current.origY + dy)),
       })
     }
-    const onUp = () => {
+    const onUp = (ev: MouseEvent) => {
       setDragging(false)
+      if (dragRef.current) {
+        const dx = ev.clientX - dragRef.current.startX
+        const dy = ev.clientY - dragRef.current.startY
+        const rawX = dragRef.current.origX + dx
+        const rawY = dragRef.current.origY + dy
+        onPosChange(snapToEdge(rawX, rawY))
+      }
       dragRef.current = null
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -295,7 +320,7 @@ export function FloatBubble({
         onContextMenu={onContextMenu}
         style={{
           position: 'fixed',
-          left: hovered ? pos.x - ENTRY : pos.x,
+          left: hovered && pos.x > window.innerWidth / 2 ? pos.x - ENTRY : pos.x,
           top: pos.y,
           height: BALL,
           width: hovered ? BALL + ENTRY : BALL,
@@ -780,105 +805,201 @@ function WrenchIcon() {
   )
 }
 
+const PLAN_DESCRIPTIONS: Record<string, string> = {
+  '01 气化冷态开车': '气化炉从冷态启动至正常运行的全流程操作预案，适用于计划停车后的开车工况，涵盖预热、升温、投料等关键阶段。',
+  '02 气化热态开车': '气化炉在热态备用状态下快速恢复投料的操作预案，适用于短时间停车后的快速开车场景。',
+  '03 正常停车': '气化炉按计划进行降负荷、退料、吹扫的正常停车操作预案，确保设备安全退出运行状态。',
+  '04 紧急停车': '气化炉发生异常时的紧急联锁停车操作预案，最短时间内切断进料并隔离系统。',
+  '05 停电应急': '装置突发停电时的应急响应预案，涵盖 UPS 切换、关键阀门手动操作及安全隔离措施。',
+  '06 紧急停车': '高压差报警触发后的紧急停车操作预案，聚焦烧嘴保护与气化炉快速降压处理。',
+  '07 反应器床层温度高': '合成反应器床层温度超高时的处置预案，通过调节循环量和负荷恢复床层温度至正常范围。',
+  '08 烧嘴压差波动': '气化烧嘴压差出现异常波动时的处置预案，判断煤浆性质变化并执行调整或切换操作。',
+  '09 汽包干烧紧急预案': '汽包液位骤降至低低联锁值时的紧急处置预案，防止汽包过热及锅炉损伤。',
+  '10 空分跳车应急': '空分装置联锁跳车后气化炉及下游单元的应急响应预案，确保氮气封闭与安全停车。',
+}
+
 export function ViewDrawer({ plan, onClose, onActivate }: { plan: string; onClose: () => void; onActivate: (p: string) => void }) {
-  // Group steps by group number; filter out group-title rows for step rendering
   const rows: SharedProcRow[] = SHARED_PROC_ROWS
   const groupNums = [...new Set(rows.map((r) => r.group))].sort((a, b) => a - b)
   const getGroupTitle = (g: number) => rows.find((r) => r.group === g && r.type === '组标题')?.content ?? `步骤组 ${g}`
   const getGroupSteps = (g: number) => rows.filter((r) => r.group === g && r.type !== '组标题')
+  const totalSteps = groupNums.reduce((n, g) => n + getGroupSteps(g).length, 0)
 
   return (
     <>
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1500 }} onClick={onClose} />
+      {/* Backdrop */}
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(15,22,36,0.5)', zIndex: 1500, backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
+        onClick={onClose}
+      />
+
+      {/* Modal */}
       <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 420,
-        background: '#F4F6F9', zIndex: 1600,
-        boxShadow: '-12px 0 48px rgba(0,0,0,0.22)',
-        display: 'flex', flexDirection: 'column',
-        animation: 'drawerIn 220ms cubic-bezier(0.2,0,0,1)',
+        position: 'fixed', inset: 0, zIndex: 1600,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '32px 24px',
+        pointerEvents: 'none',
       }}>
-        {/* Header */}
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #E0E4E9', background: '#fff', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: 10, color: '#9FA6AF', marginBottom: 4, fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>操作预案</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#171A1E', lineHeight: 1.2 }}>{plan}</div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#515760' }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: '#004B8D', opacity: 0.7 }} />
-                中控操作
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#515760' }}>
-                <WrenchIcon />
-                现场操作
+        <div style={{
+          width: '100%', maxWidth: 820,
+          maxHeight: '86vh',
+          background: '#fff',
+          borderRadius: 16,
+          boxShadow: '0 32px 80px rgba(10,20,40,0.32), 0 0 0 1px rgba(0,75,141,0.1)',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          pointerEvents: 'auto',
+          animation: 'modalIn 200ms cubic-bezier(0.2,0,0,1)',
+        }}>
+          {/* ── Header ── */}
+          <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid #E0E4E9', background: 'linear-gradient(135deg, #F5F9FE 0%, #fff 60%)', flexShrink: 0, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 11, background: '#EEF5FB', border: '1px solid rgba(0,75,141,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#004B8D" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: '#82B9DD', marginBottom: 4, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>操作预案</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#171A1E', lineHeight: 1.25 }}>{plan}</div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#515760' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#004B8D', opacity: 0.75, display: 'inline-block' }} />中控操作
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#515760' }}>
+                  <WrenchIcon />现场操作
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  共 {totalSteps} 步 · {groupNums.length} 组
+                </span>
               </div>
             </div>
+            <button
+              onClick={onClose}
+              style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #E0E4E9', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#747A82', flexShrink: 0, transition: 'all 100ms ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F1F3F6'; e.currentTarget.style.borderColor = '#CDD2D9' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E0E4E9' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid #E0E4E9', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#747A82', flexShrink: 0 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
 
-        {/* Step list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
-          {groupNums.map((g) => {
-            const steps = getGroupSteps(g)
-            if (steps.length === 0) return null
-            return (
-              <div key={g} style={{ marginBottom: 18 }}>
-                {/* Group header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 3, height: 14, borderRadius: 2, background: '#004B8D', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#30353B', letterSpacing: '0.02em' }}>{getGroupTitle(g)}</span>
-                  <div style={{ flex: 1, height: 1, background: '#E0E4E9' }} />
-                  <span style={{ fontSize: 10, color: '#9FA6AF' }}>{steps.length} 步</span>
+          {/* ── Body: description left + steps right ── */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: 0, overflow: 'hidden' }}>
+
+            {/* Left: description + meta */}
+            <div style={{ borderRight: '1px solid #E0E4E9', padding: '20px 20px', background: '#F9FAFB', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9FA6AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>预案描述</div>
+                <div style={{ background: '#fff', borderLeft: '3px solid #004B8D', borderRadius: '0 8px 8px 0', padding: '10px 14px', fontSize: 12, color: '#515760', lineHeight: 1.75, border: '1px solid rgba(0,75,141,0.12)', borderLeftColor: '#004B8D' }}>
+                  {PLAN_DESCRIPTIONS[plan] ?? '暂无预案描述'}
                 </div>
-
-                {/* Steps */}
-                {steps.map((step) => {
-                  const isField = step.location === '现场'
-                  return (
-                    <div key={step.seq} style={{ display: 'flex', gap: 10, marginBottom: 6, alignItems: 'flex-start' }}>
-                      {/* Seq badge */}
-                      <div style={{
-                        width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                        background: isField ? 'rgba(232,147,42,0.12)' : '#EEF5FB',
-                        border: isField ? '1px solid rgba(232,147,42,0.4)' : '1px solid #D4E4F5',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 9, fontWeight: 800,
-                        color: isField ? '#E8932A' : '#004B8D',
-                        fontFamily: '"Inter Tight", sans-serif',
-                      }}>
-                        {step.seq}
-                      </div>
-
-                      {/* Content card */}
-                      <div style={{
-                        flex: 1, padding: '6px 10px',
-                        background: isField ? 'rgba(232,147,42,0.06)' : '#fff',
-                        borderRadius: 7,
-                        border: isField ? '1px solid rgba(232,147,42,0.25)' : '1px solid #E4E8ED',
-                        fontSize: 12, color: '#171A1E', lineHeight: 1.55,
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                          {isField && <div style={{ marginTop: 2, flexShrink: 0 }}><WrenchIcon /></div>}
-                          <span>{step.content}</span>
-                        </div>
-                        {step.type === '提示信息' && (
-                          <div style={{ marginTop: 4, fontSize: 10, color: '#9FA6AF', fontStyle: 'italic' }}>提示信息</div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
-            )
-          })}
-        </div>
 
-        {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid #E0E4E9', background: '#fff', display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px 0', border: '1px solid #CDD2D9', borderRadius: 8, background: '#fff', color: '#30353B', fontSize: 13, cursor: 'pointer' }}>关闭</button>
-          <button onClick={() => { onActivate(plan); onClose() }} style={{ flex: 2, padding: '10px 0', border: 'none', borderRadius: 8, background: '#004B8D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>激活预案</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9FA6AF', letterSpacing: '0.08em', textTransform: 'uppercase' }}>预案信息</div>
+                {[
+                  { label: '步骤总数', value: `${totalSteps} 步` },
+                  { label: '操作分组', value: `${groupNums.length} 组` },
+                  { label: '预案状态', value: '已启用' },
+                  { label: '最后更新', value: '2026-07-22' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', background: '#fff', borderRadius: 7, border: '1px solid #E4E8ED', fontSize: 12 }}>
+                    <span style={{ color: '#747A82' }}>{label}</span>
+                    <span style={{ fontWeight: 600, color: '#171A1E', fontFamily: label === '最后更新' ? '"JetBrains Mono", monospace' : 'inherit', fontSize: label === '最后更新' ? 11 : 12 }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Step type legend */}
+              <div style={{ marginTop: 'auto', padding: '12px', background: '#EEF5FB', borderRadius: 9, border: '1px solid rgba(0,75,141,0.12)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#5A7899', marginBottom: 8, letterSpacing: '0.05em' }}>图例说明</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: '#515760' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: '#004B8D', opacity: 0.75, display: 'inline-block', flexShrink: 0 }} />
+                    中控室操作步骤
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: '#515760' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8932A" strokeWidth="2" strokeLinecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    现场作业步骤
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: '#8B6200' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F2B544" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    提示信息
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: step list */}
+            <div style={{ overflowY: 'auto', padding: '16px 20px' }}>
+              {groupNums.map((g, gi) => {
+                const steps = getGroupSteps(g)
+                if (steps.length === 0) return null
+                return (
+                  <div key={g} style={{ marginBottom: 20 }}>
+                    {/* Group header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '7px 12px', background: 'linear-gradient(90deg,#EEF5FB,#F5F9FE 60%,#F9FAFB)', borderRadius: 8, borderLeft: '3px solid #004B8D' }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 5, background: '#004B8D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: '"Inter Tight", sans-serif', flexShrink: 0 }}>{gi + 1}</div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1A2D45', flex: 1 }}>{getGroupTitle(g)}</span>
+                      <span style={{ fontSize: 10, color: '#5A7899', background: '#D8E8F5', padding: '1px 7px', borderRadius: 999, fontFamily: '"Inter Tight", sans-serif', fontWeight: 500 }}>{steps.length} 步</span>
+                    </div>
+
+                    {/* Steps */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 4 }}>
+                      {steps.map((step) => {
+                        const isField = step.location === '现场'
+                        const isHint  = step.type === '提示信息'
+                        return (
+                          <div key={step.seq} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <div style={{
+                              width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                              background: isField ? 'rgba(232,147,42,0.12)' : '#EEF5FB',
+                              border: isField ? '1px solid rgba(232,147,42,0.4)' : '1px solid #D4E4F5',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 9, fontWeight: 800,
+                              color: isField ? '#E8932A' : '#004B8D',
+                              fontFamily: '"Inter Tight", sans-serif',
+                            }}>
+                              {step.seq}
+                            </div>
+                            <div style={{
+                              flex: 1, padding: '7px 11px',
+                              background: isHint ? '#FFFBF0' : isField ? 'rgba(232,147,42,0.05)' : '#F9FBFE',
+                              borderRadius: 8,
+                              border: isHint ? '1px solid rgba(242,181,68,0.35)' : isField ? '1px solid rgba(232,147,42,0.2)' : '1px solid #E4E8ED',
+                              fontSize: 12, color: isHint ? '#8B6200' : '#171A1E', lineHeight: 1.6,
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                {isField && <div style={{ marginTop: 2, flexShrink: 0 }}><WrenchIcon /></div>}
+                                {isHint && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F2B544" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+                                <span>{step.content}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ padding: '14px 24px', borderTop: '1px solid #E0E4E9', background: '#FAFBFC', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: '#9FA6AF', flex: 1 }}>共 {totalSteps} 个操作步骤 · {groupNums.length} 个操作组</span>
+            <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid #CDD2D9', borderRadius: 8, background: '#fff', color: '#30353B', fontSize: 13, cursor: 'pointer', transition: 'all 100ms' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#CDD2D9'; e.currentTarget.style.color = '#30353B' }}>
+              关闭
+            </button>
+            <button onClick={() => { onActivate(plan); onClose() }} style={{ padding: '9px 24px', border: 'none', borderRadius: 8, background: '#004B8D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'background 100ms' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#005FAD')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '#004B8D')}>
+              激活预案
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -1049,7 +1170,7 @@ export default function Scene1({ onActivate, onManage }: Props) {
   const [aiOpen,       setAiOpen]       = useState(false)
   const [viewPlan,     setViewPlan]     = useState<string | null>(null)
   const [ctxMenu,      setCtxMenu]      = useState<{ x: number; y: number } | null>(null)
-  const [bubblePos,    setBubblePos]    = useState(() => ({ x: window.innerWidth - 32 - 72, y: window.innerHeight - 32 - 72 }))
+  const [bubblePos,    setBubblePos]    = useState(() => ({ x: window.innerWidth - 72 - 8, y: Math.round((window.innerHeight - 72) / 2) }))
   const [silentSince]  = useState(() => Date.now() - 36 * 3_600_000)
   const silentDuration = useSilentDuration(silentSince)
 
@@ -1086,7 +1207,7 @@ export default function Scene1({ onActivate, onManage }: Props) {
         @keyframes bubblePulse  { 0%,100%{opacity:1} 50%{opacity:0.72} }
         @keyframes ringExpand   { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(2.1);opacity:0} }
         @keyframes panelIn      { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes drawerIn     { from{transform:translateX(100%);opacity:0.6} to{transform:translateX(0);opacity:1} }
+        @keyframes modalIn      { from{opacity:0;transform:scale(0.96) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
       `}</style>
 
       {/* ── DCS background ── */}

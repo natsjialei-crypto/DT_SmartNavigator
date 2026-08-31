@@ -73,12 +73,22 @@ interface Param {
   status: 'normal' | 'attention' | 'warning' | 'critical'
 }
 const PROCESS_PARAMS: Param[] = [
-  { id: 'PIC201', name: '激冷室压力', value: 2.31, unit: 'MPa', high: 3.0, low: 1.5, highHigh: 3.5, lowLow: 1.2, status: 'normal' },
-  { id: 'FIC101', name: '煤浆进料流量', value: 18.24, unit: 't/h', high: 25.0, low: 10.0, status: 'attention' },
-  { id: 'TI302', name: '出口温度', value: 1352, unit: '°C', high: 1500, low: 1200, highHigh: 1600, status: 'normal' },
-  { id: 'LIC401', name: '激冷室液位', value: 63.5, unit: '%', high: 80, low: 30, highHigh: 90, lowLow: 15, status: 'normal' },
-  { id: 'FIC501', name: '激冷水流量', value: 126.4, unit: 'm³/h', high: 160, low: 80, status: 'normal' },
-  { id: 'PDI601', name: '烧嘴压差', value: 1.28, unit: 'MPa', high: 1.2, low: 0.4, highHigh: 1.5, status: 'warning' },
+  { id: 'PIC201', name: '激冷室压力',    value: 2.31,  unit: 'MPa',   high: 3.0,  low: 1.5,  highHigh: 3.5,  lowLow: 1.2,  status: 'normal'    },
+  { id: 'FIC101', name: '煤浆进料流量',  value: 18.24, unit: 't/h',   high: 25.0, low: 10.0,                               status: 'attention' },
+  { id: 'TI302',  name: '出口温度',      value: 1352,  unit: '°C',    high: 1500, low: 1200, highHigh: 1600,               status: 'normal'    },
+  { id: 'LIC401', name: '激冷室液位',    value: 63.5,  unit: '%',     high: 80,   low: 30,   highHigh: 90,   lowLow: 15,   status: 'normal'    },
+  { id: 'FIC501', name: '激冷水流量',    value: 126.4, unit: 'm³/h',  high: 160,  low: 80,                                 status: 'normal'    },
+  { id: 'PDI601', name: '烧嘴压差',      value: 1.28,  unit: 'MPa',   high: 1.2,  low: 0.4,  highHigh: 1.5,               status: 'warning'   },
+  { id: 'PIC202', name: '气化炉压力',    value: 3.85,  unit: 'MPa',   high: 4.2,  low: 3.0,  highHigh: 4.5,               status: 'normal'    },
+  { id: 'FIC102', name: '氧气进料流量',  value: 22.1,  unit: 'km³/h', high: 28.0, low: 12.0,                               status: 'normal'    },
+  { id: 'PIC203', name: '煤浆泵出口压力',value: 5.12,  unit: 'MPa',   high: 6.0,  low: 4.0,  highHigh: 6.5,               status: 'normal'    },
+  { id: 'LIC402', name: '闪蒸槽液位',    value: 48.2,  unit: '%',     high: 75,   low: 25,   highHigh: 85,   lowLow: 15,   status: 'normal'    },
+  { id: 'TI303',  name: '合成气出口温度',value: 248,   unit: '°C',    high: 300,  low: 180,  highHigh: 350,               status: 'normal'    },
+  { id: 'FIC502', name: '激冷水补水量',  value: 14.6,  unit: 'm³/h',  high: 25,   low: 5,                                  status: 'normal'    },
+  { id: 'AI601',  name: '合成气CO含量',  value: 42.3,  unit: '%',     high: 50,   low: 35,                                 status: 'attention' },
+  { id: 'AI602',  name: '合成气H₂含量',  value: 36.8,  unit: '%',     high: 45,   low: 28,                                 status: 'normal'    },
+  { id: 'TI304',  name: '气化炉壁温',    value: 312,   unit: '°C',    high: 400,  low: 250,  highHigh: 450,               status: 'normal'    },
+  { id: 'PDI602', name: '洗涤塔压差',    value: 0.42,  unit: 'MPa',   high: 0.6,  low: 0.1,  highHigh: 0.8,               status: 'normal'    },
 ]
 
 function generateTrend(base: number, count = 30, noise = 0.05) {
@@ -89,15 +99,25 @@ function generateTrend(base: number, count = 30, noise = 0.05) {
 }
 // All selectable trend params (id → chart config)
 const ALL_TRENDS: Record<string, { name: string; unit: string; high: number; low: number; color: string; data: { t: string; v: number }[] }> = {
-  PIC201: { name: '激冷室压力', unit: 'MPa', high: 3.0, low: 1.5, color: '#004B8D', data: generateTrend(2.31) },
-  FIC101: { name: '煤浆进料流量', unit: 't/h', high: 25, low: 10, color: '#F2B544', data: generateTrend(18.24, 30, 0.08) },
-  TI302:  { name: '出口温度', unit: '°C', high: 1500, low: 1200, color: '#39C523', data: generateTrend(1352, 30, 0.03) },
-  LIC401: { name: '激冷室液位', unit: '%', high: 80, low: 30, color: '#0069A8', data: generateTrend(63.5, 30, 0.06) },
-  FIC501: { name: '激冷水流量', unit: 'm³/h', high: 160, low: 80, color: '#7A68A6', data: generateTrend(126.4, 30, 0.04) },
-  PDI601: { name: '烧嘴压差', unit: 'MPa', high: 1.2, low: 0.4, color: '#D66B55', data: generateTrend(1.28, 30, 0.06) },
+  PIC201: { name: '激冷室压力',     unit: 'MPa',   high: 3.0,  low: 1.5,  color: '#004B8D', data: generateTrend(2.31,   30, 0.05) },
+  FIC101: { name: '煤浆进料流量',   unit: 't/h',   high: 25,   low: 10,   color: '#F2B544', data: generateTrend(18.24,  30, 0.08) },
+  TI302:  { name: '出口温度',       unit: '°C',    high: 1500, low: 1200, color: '#39C523', data: generateTrend(1352,   30, 0.03) },
+  LIC401: { name: '激冷室液位',     unit: '%',     high: 80,   low: 30,   color: '#0069A8', data: generateTrend(63.5,   30, 0.06) },
+  FIC501: { name: '激冷水流量',     unit: 'm³/h',  high: 160,  low: 80,   color: '#7A68A6', data: generateTrend(126.4,  30, 0.04) },
+  PDI601: { name: '烧嘴压差',       unit: 'MPa',   high: 1.2,  low: 0.4,  color: '#D66B55', data: generateTrend(1.28,   30, 0.06) },
+  PIC202: { name: '气化炉压力',     unit: 'MPa',   high: 4.2,  low: 3.0,  color: '#2E86AB', data: generateTrend(3.85,   30, 0.04) },
+  FIC102: { name: '氧气进料流量',   unit: 'km³/h', high: 28,   low: 12,   color: '#E84855', data: generateTrend(22.1,   30, 0.06) },
+  PIC203: { name: '煤浆泵出口压力', unit: 'MPa',   high: 6.0,  low: 4.0,  color: '#3BB273', data: generateTrend(5.12,   30, 0.03) },
+  LIC402: { name: '闪蒸槽液位',     unit: '%',     high: 75,   low: 25,   color: '#F4A261', data: generateTrend(48.2,   30, 0.07) },
+  TI303:  { name: '合成气出口温度', unit: '°C',    high: 300,  low: 180,  color: '#A8DADC', data: generateTrend(248,    30, 0.04) },
+  FIC502: { name: '激冷水补水量',   unit: 'm³/h',  high: 25,   low: 5,    color: '#9B5DE5', data: generateTrend(14.6,   30, 0.09) },
+  AI601:  { name: '合成气CO含量',   unit: '%',     high: 50,   low: 35,   color: '#F15BB5', data: generateTrend(42.3,   30, 0.03) },
+  AI602:  { name: '合成气H₂含量',   unit: '%',     high: 45,   low: 28,   color: '#00BBF9', data: generateTrend(36.8,   30, 0.03) },
+  TI304:  { name: '气化炉壁温',     unit: '°C',    high: 400,  low: 250,  color: '#FEE440', data: generateTrend(312,    30, 0.02) },
+  PDI602: { name: '洗涤塔压差',     unit: 'MPa',   high: 0.6,  low: 0.1,  color: '#00F5D4', data: generateTrend(0.42,   30, 0.08) },
 }
 
-const DEFAULT_SELECTED = ['PIC201', 'FIC101', 'TI302', 'LIC401']
+const DEFAULT_SELECTED = PROCESS_PARAMS.map((p) => p.id)
 
 const STATUS_STYLE: Record<StepStatus, { bg: string; color: string; dot: string; label: string }> = {
   '已操作': { bg: '#EFF9EC', color: '#237D17', dot: '#39C523', label: '已操作' },
@@ -162,7 +182,8 @@ export default function Scene2({ planName, onReset }: Props) {
   const [confirmDoneOpen, setConfirmDoneOpen] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
   const [selectedTrends, setSelectedTrends] = useState<string[]>(DEFAULT_SELECTED)
-  const [trendPickerOpen, setTrendPickerOpen] = useState(false)
+  const [sortPanelOpen, setSortPanelOpen] = useState(false)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [feedback, setFeedback] = useState('')
   const startTime = '2026-08-17 09:32'
 
@@ -173,7 +194,7 @@ export default function Scene2({ planName, onReset }: Props) {
   const [aiOpen,       setAiOpen]       = useState(false)
   const [viewPlan,     setViewPlan]     = useState<string | null>(null)
   const [ctxMenu,      setCtxMenu]      = useState<{ x: number; y: number } | null>(null)
-  const [bubblePos,    setBubblePos]    = useState(() => ({ x: window.innerWidth - 32 - 72, y: window.innerHeight - 32 - 72 }))
+  const [bubblePos,    setBubblePos]    = useState(() => ({ x: window.innerWidth - 72 - 8, y: Math.round((window.innerHeight - 72) / 2) }))
   const [silentSince]  = useState(() => Date.now() - 36 * 3_600_000)
   const silentDuration = useSilentDuration(silentSince)
   const BALL = 72
@@ -189,12 +210,25 @@ export default function Scene2({ planName, onReset }: Props) {
   const handleContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setActivePanel(null); setCtxMenu({ x: e.clientX, y: e.clientY }) }
   const handleQuit = () => { if (window.confirm('确定要退出操作导航系统吗？')) window.close() }
 
-  const toggleTrend = (id: string) => {
+  const moveTrend = (from: number, to: number) => {
     setSelectedTrends((prev) => {
-      if (prev.includes(id)) return prev.length > 1 ? prev.filter((x) => x !== id) : prev
-      if (prev.length >= 4) return prev
-      return [...prev, id]
+      const next = [...prev]
+      const [item] = next.splice(from, 1)
+      next.splice(to, 0, item)
+      return next
     })
+  }
+
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(idx))
+  }
+
+  const handleDrop = (e: React.DragEvent, toIdx: number) => {
+    e.preventDefault()
+    const fromIdx = Number(e.dataTransfer.getData('text/plain'))
+    if (fromIdx !== toIdx) moveTrend(fromIdx, toIdx)
+    setDragOverIdx(null)
   }
 
   useEffect(() => {
@@ -574,100 +608,119 @@ export default function Scene2({ planName, onReset }: Props) {
 
         {/* Right: Process Card */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', minWidth: 0 }}>
-          {/* 6 Key Params — compact */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', flexShrink: 0 }}>
-            <div style={{ fontSize: 10, color: '#747A82', fontWeight: 600, marginBottom: 7, letterSpacing: '0.06em', textTransform: 'uppercase' }}>关键工艺参数</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-              {PROCESS_PARAMS.map((p) => <ParamCard key={p.id} p={p} />)}
+          {/* 16 Key Params — scrollable */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', flexShrink: 0, maxHeight: 224, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 10, color: '#747A82', fontWeight: 600, marginBottom: 7, letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>关键工艺参数</div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                {PROCESS_PARAMS.map((p) => <ParamCard key={p.id} p={p} />)}
+              </div>
             </div>
           </div>
 
           {/* Trend Charts */}
           <div style={{ flex: 1, background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Header row with multi-select picker */}
+            {/* Header row with sort button */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6, flexShrink: 0 }}>
               <span style={{ fontSize: 10, color: '#747A82', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>历史趋势</span>
               <div style={{ marginLeft: 'auto', position: 'relative' }}>
-                {/* Picker trigger */}
                 <button
-                  onClick={() => setTrendPickerOpen((v) => !v)}
+                  onClick={() => setSortPanelOpen((v) => !v)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 5,
                     padding: '3px 10px 3px 8px',
                     border: '1px solid #CDD2D9', borderRadius: 6,
-                    background: trendPickerOpen ? '#EEF5FB' : '#fff',
+                    background: sortPanelOpen ? '#EEF5FB' : '#fff',
                     color: '#515760', fontSize: 11, cursor: 'pointer',
                     transition: 'all 120ms ease',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#82B9DD' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = trendPickerOpen ? '#004B8D' : '#CDD2D9' }}
+                  onMouseLeave={(e) => { if (!sortPanelOpen) e.currentTarget.style.borderColor = '#CDD2D9' }}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#747A82" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                  <span>参数</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', background: '#004B8D', color: '#fff', fontSize: 10, fontWeight: 700, fontFamily: '"Inter Tight", sans-serif' }}>
-                    {selectedTrends.length}
-                  </span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9FA6AF" strokeWidth="2" strokeLinecap="round" style={{ transform: trendPickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }}><polyline points="6 9 12 15 18 9" /></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#747A82" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
+                  <span>排序</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9FA6AF" strokeWidth="2" strokeLinecap="round" style={{ transform: sortPanelOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }}><polyline points="6 9 12 15 18 9" /></svg>
                 </button>
 
-                {/* Dropdown */}
-                {trendPickerOpen && (
+                {sortPanelOpen && (
                   <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setTrendPickerOpen(false)} />
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setSortPanelOpen(false)} />
                     <div style={{
                       position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200,
                       background: '#fff', borderRadius: 10,
                       border: '1px solid #E0E4E9',
                       boxShadow: '0 8px 24px rgba(27,39,52,0.12)',
                       padding: '6px 0',
-                      minWidth: 190,
+                      minWidth: 220,
                     }}>
                       <div style={{ padding: '4px 12px 6px', fontSize: 10, color: '#9FA6AF', borderBottom: '1px solid #F1F3F6', marginBottom: 4 }}>
-                        最多选 4 个参数 · 已选 {selectedTrends.length}/4
+                        拖拽或点击箭头调整趋势图顺序
                       </div>
-                      {Object.entries(ALL_TRENDS).map(([id, cfg]) => {
-                        const checked = selectedTrends.includes(id)
-                        const disabled = !checked && selectedTrends.length >= 4
-                        return (
-                          <button
-                            key={id}
-                            onClick={() => !disabled && toggleTrend(id)}
-                            style={{
-                              width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                              padding: '7px 12px', border: 'none', background: 'transparent',
-                              cursor: disabled ? 'not-allowed' : 'pointer',
-                              opacity: disabled ? 0.4 : 1,
-                              transition: 'background 80ms ease',
-                            }}
-                            onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.background = '#F7F8FA' }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                          >
-                            {/* Color pip */}
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, flexShrink: 0, border: checked ? `2px solid ${cfg.color}` : '2px solid transparent', outline: checked ? `2px solid ${cfg.color}22` : 'none' }} />
-                            {/* Checkbox */}
-                            <div style={{
-                              width: 14, height: 14, borderRadius: 4, flexShrink: 0,
-                              border: checked ? `2px solid ${cfg.color}` : '2px solid #CDD2D9',
-                              background: checked ? cfg.color : '#fff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                              {checked && <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2" strokeLinecap="round" /></svg>}
+                      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                        {selectedTrends.map((id, idx) => {
+                          const cfg = ALL_TRENDS[id]
+                          if (!cfg) return null
+                          return (
+                            <div
+                              key={id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, idx)}
+                              onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx) }}
+                              onDragLeave={() => setDragOverIdx(null)}
+                              onDrop={(e) => handleDrop(e, idx)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '6px 10px',
+                                background: dragOverIdx === idx ? '#EEF5FB' : 'transparent',
+                                borderTop: dragOverIdx === idx ? `2px solid #004B8D` : '2px solid transparent',
+                                cursor: 'grab',
+                                transition: 'background 80ms ease',
+                                userSelect: 'none',
+                              }}
+                            >
+                              {/* Drag handle */}
+                              <svg width="10" height="14" viewBox="0 0 10 14" fill="#CDD2D9" style={{ flexShrink: 0 }}>
+                                <circle cx="3" cy="2" r="1.5"/><circle cx="7" cy="2" r="1.5"/>
+                                <circle cx="3" cy="7" r="1.5"/><circle cx="7" cy="7" r="1.5"/>
+                                <circle cx="3" cy="12" r="1.5"/><circle cx="7" cy="12" r="1.5"/>
+                              </svg>
+                              {/* Color pip */}
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+                              {/* Label */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 11, color: '#171A1E', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cfg.name}</div>
+                                <div style={{ fontSize: 9, color: '#9FA6AF', fontFamily: '"JetBrains Mono", monospace' }}>{id}</div>
+                              </div>
+                              {/* Up / Down arrows */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); if (idx > 0) moveTrend(idx, idx - 1) }}
+                                  disabled={idx === 0}
+                                  style={{ width: 18, height: 18, border: '1px solid #E0E4E9', borderRadius: 4, background: '#fff', cursor: idx === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: idx === 0 ? 0.3 : 1 }}
+                                >
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#515760" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); if (idx < selectedTrends.length - 1) moveTrend(idx, idx + 1) }}
+                                  disabled={idx === selectedTrends.length - 1}
+                                  style={{ width: 18, height: 18, border: '1px solid #E0E4E9', borderRadius: 4, background: '#fff', cursor: idx === selectedTrends.length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: idx === selectedTrends.length - 1 ? 0.3 : 1 }}
+                                >
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#515760" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                              </div>
                             </div>
-                            <div style={{ textAlign: 'left' }}>
-                              <div style={{ fontSize: 11, color: '#171A1E', fontWeight: checked ? 600 : 400 }}>{cfg.name}</div>
-                              <div style={{ fontSize: 9, color: '#9FA6AF', fontFamily: '"JetBrains Mono", monospace' }}>{id} · {cfg.unit}</div>
-                            </div>
-                          </button>
-                        )
-                      })}
+                          )
+                        })}
+                      </div>
                     </div>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Chart grid — driven by selectedTrends */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: selectedTrends.length <= 2 ? '1fr' : '1fr 1fr', gap: 6, overflow: 'hidden' }}>
+            {/* Chart grid — driven by selectedTrends, scrollable */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: `repeat(${Math.ceil(selectedTrends.length / 2)}, 200px)`, gap: 6 }}>
               {selectedTrends.map((id) => {
                 const cfg = ALL_TRENDS[id]
                 if (!cfg) return null
@@ -698,6 +751,7 @@ export default function Scene2({ planName, onReset }: Props) {
                   </div>
                 )
               })}
+            </div>
             </div>
           </div>
         </div>
