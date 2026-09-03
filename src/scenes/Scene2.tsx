@@ -181,9 +181,11 @@ export default function Scene2({ planName, onReset }: Props) {
   const [resetConfirm, setResetConfirm] = useState(false)
   const [confirmDoneOpen, setConfirmDoneOpen] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
-  const [selectedTrends, setSelectedTrends] = useState<string[]>(DEFAULT_SELECTED)
-  const [sortPanelOpen, setSortPanelOpen] = useState(false)
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const [paramFilter, setParamFilter] = useState<'all' | 'warning' | 'normal'>('all')
+  const [selectedParamId, setSelectedParamId] = useState<string>(() => {
+    const first = PROCESS_PARAMS.find(p => p.status !== 'normal')
+    return first ? first.id : PROCESS_PARAMS[0].id
+  })
   const [feedback, setFeedback] = useState('')
   const startTime = '2026-08-17 09:32'
 
@@ -210,26 +212,6 @@ export default function Scene2({ planName, onReset }: Props) {
   const handleContextMenu = (e: React.MouseEvent) => { e.preventDefault(); setActivePanel(null); setCtxMenu({ x: e.clientX, y: e.clientY }) }
   const handleQuit = () => { if (window.confirm('确定要退出操作导航系统吗？')) window.close() }
 
-  const moveTrend = (from: number, to: number) => {
-    setSelectedTrends((prev) => {
-      const next = [...prev]
-      const [item] = next.splice(from, 1)
-      next.splice(to, 0, item)
-      return next
-    })
-  }
-
-  const handleDragStart = (e: React.DragEvent, idx: number) => {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(idx))
-  }
-
-  const handleDrop = (e: React.DragEvent, toIdx: number) => {
-    e.preventDefault()
-    const fromIdx = Number(e.dataTransfer.getData('text/plain'))
-    if (fromIdx !== toIdx) moveTrend(fromIdx, toIdx)
-    setDragOverIdx(null)
-  }
 
   useEffect(() => {
     const id = setInterval(() => setElapsed((t) => t + 1), 60000)
@@ -254,96 +236,6 @@ export default function Scene2({ planName, onReset }: Props) {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#E9EDF2', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif' }}>
-      {/* ─── Tab Bar (light) ─── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E0E4E9', display: 'flex', alignItems: 'stretch', padding: '0 0 0 16px', height: 52, flexShrink: 0, boxShadow: '0 1px 3px rgba(27,39,52,0.06)' }}>
-        {/* Logo + product name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 20, marginRight: 4, borderRight: '1px solid #E0E4E9', flexShrink: 0 }}>
-          <div style={{
-            width: 34, height: 34,
-            background: 'linear-gradient(135deg, #005A9B 0%, #004B8D 100%)',
-            borderRadius: 9,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(0,75,141,0.3), inset 0 1px 0 rgba(255,255,255,0.12)',
-          }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7.5C4 6.7 4.6 6 5.5 6H12V20H5.5C4.6 20 4 19.3 4 18.5V7.5Z" fill="white" />
-              <path d="M12 6H18.5C19.4 6 20 6.7 20 7.5V18.5C20 19.3 19.4 20 18.5 20H12V6Z" fill="white" opacity={0.72} />
-              <rect x="11.5" y="6" width="1" height="14" fill="white" opacity={0.4} />
-              <path d="M8 1.5L8.6 3.4L10.5 4L8.6 4.6L8 6.5L7.4 4.6L5.5 4L7.4 3.4Z" fill="white" />
-              <path d="M16.5 0.8L17 2.2L18.4 2.7L17 3.2L16.5 4.6L16 3.2L14.6 2.7L16 2.2Z" fill="white" />
-              <path d="M13.5 2.5L13.8 3.3L14.6 3.6L13.8 3.9L13.5 4.7L13.2 3.9L12.4 3.6L13.2 3.3Z" fill="white" opacity={0.8} />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#171A1E', lineHeight: 1.15 }}>Smart Navigator</div>
-            <div style={{ fontSize: 10, color: '#747A82', lineHeight: 1 }}>操作预案导航</div>
-          </div>
-        </div>
-
-        {/* Plan tabs — grouped by priority */}
-        <div style={{ display: 'flex', alignItems: 'stretch', flex: 1, overflow: 'hidden' }}>
-          {(() => {
-            // Build ordered groups preserving first-occurrence order
-            const seen = new Set<number>()
-            const order: number[] = []
-            for (const p of PLANS) { if (!seen.has(p.priority)) { seen.add(p.priority); order.push(p.priority) } }
-
-            return order.map((pri, gi) => {
-              const meta = PRIORITY_META[pri]
-              const plansInGroup = PLANS.map((p, i) => ({ ...p, idx: i })).filter((p) => p.priority === pri)
-              const groupHasActive = plansInGroup.some((p) => p.idx === activeTab)
-
-              return (
-                <div key={pri} style={{ display: 'flex', alignItems: 'stretch', borderRight: '1px solid #E0E4E9' }}>
-                  {/* Group label pill */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', padding: '0 8px 0 10px', flexShrink: 0, gap: 4,
-                    borderRight: '1px solid rgba(0,0,0,0.06)',
-                  }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
-                      background: groupHasActive ? meta.bg : '#F1F3F6',
-                      color: groupHasActive ? meta.color : '#9FA6AF',
-                      border: `1px solid ${groupHasActive ? meta.border : '#E0E4E9'}`,
-                      letterSpacing: '0.03em', whiteSpace: 'nowrap',
-                      transition: 'all 140ms ease',
-                    }}>
-                      {meta.label}
-                    </span>
-                  </div>
-
-                  {/* Tabs in this group */}
-                  {plansInGroup.map((p) => {
-                    const active = activeTab === p.idx
-                    return (
-                      <button
-                        key={p.idx}
-                        onClick={() => setActiveTab(p.idx)}
-                        style={{
-                          padding: '0 14px', height: '100%', border: 'none',
-                          borderBottom: active ? `2.5px solid ${meta.color}` : '2.5px solid transparent',
-                          background: active ? meta.bg : 'transparent',
-                          color: active ? meta.color : '#515760',
-                          fontSize: 12, fontWeight: active ? 600 : 400,
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                          transition: 'all 120ms ease', whiteSpace: 'nowrap',
-                          borderRight: '1px solid rgba(0,0,0,0.05)',
-                        }}
-                        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = '#F7F8FA' }}
-                        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
-                      >
-                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: active ? meta.color : '#CDD2D9', flexShrink: 0, transition: 'background 120ms ease' }} />
-                        {p.idx === 0 ? planName : p.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-            })
-          })()}
-        </div>
-      </div>
-
       {/* ─── Secondary Action Bar ─── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #E0E4E9', display: 'flex', alignItems: 'center', padding: '0 16px', height: 44, gap: 16, flexShrink: 0, boxShadow: '0 1px 4px rgba(27,39,52,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -390,8 +282,54 @@ export default function Scene2({ planName, onReset }: Props) {
 
       {/* ─── Main Content ─── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', gap: 10, padding: 10 }}>
-        {/* Left: Execution Steps */}
-        <div style={{ flex: '0 0 57%', background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Far Left: Plan list by priority */}
+        <div style={{ width: 188, flexShrink: 0, background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid #E0E4E9', flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#747A82', letterSpacing: '0.07em', textTransform: 'uppercase' }}>执行预案列表</div>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0 10px' }}>
+            {(() => {
+              const seen = new Set<number>()
+              const order: number[] = []
+              for (const p of PLANS) { if (!seen.has(p.priority)) { seen.add(p.priority); order.push(p.priority) } }
+              return order.map((pri) => {
+                const meta = PRIORITY_META[pri]
+                const plansInGroup = PLANS.map((p, i) => ({ ...p, idx: i })).filter((p) => p.priority === pri)
+                return (
+                  <div key={pri}>
+                    {/* Priority section header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px 4px' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: 2, background: meta.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, letterSpacing: '0.04em' }}>{meta.label}优先级</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 9, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif' }}>{plansInGroup.length}</span>
+                    </div>
+                    {/* Plan items */}
+                    {plansInGroup.map((p) => {
+                      const active = activeTab === p.idx
+                      return (
+                        <button key={p.idx} onClick={() => setActiveTab(p.idx)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '6px 12px', border: 'none', background: active ? meta.bg : 'transparent', borderLeft: `3px solid ${active ? meta.color : 'transparent'}`, cursor: 'pointer', textAlign: 'left', transition: 'all 80ms' }}
+                          onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = '#F7F8FA' }}
+                          onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: active ? meta.color : '#CDD2D9', flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color: active ? meta.color : '#515760', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                            {p.idx === 0 ? planName : p.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })
+            })()}
+          </div>
+        </div>
+
+        {/* Center: Execution Steps */}
+        <div style={{ flex: 1, background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Table header */}
           <div style={{ display: 'grid', gridTemplateColumns: '96px 148px 36px 1fr 36px', padding: '0 10px', height: 34, alignItems: 'center', background: '#F1F3F6', borderBottom: '1px solid #E0E4E9', fontSize: 11, color: '#747A82', fontWeight: 600, flexShrink: 0 }}>
             <span>实时状态</span>
@@ -607,152 +545,79 @@ export default function Scene2({ planName, onReset }: Props) {
         </div>
 
         {/* Right: Process Card */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', minWidth: 0 }}>
-          {/* 16 Key Params — scrollable */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', flexShrink: 0, maxHeight: 224, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 10, color: '#747A82', fontWeight: 600, marginBottom: 7, letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>关键工艺参数</div>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                {PROCESS_PARAMS.map((p) => <ParamCard key={p.id} p={p} />)}
+        <div style={{ flex: '0 0 27.5%', display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden', minWidth: 0 }}>
+          {/* Key Process Params */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', height: 480, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            {/* Header + filter chips */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7, flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: '#747A82', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>关键工艺参数</span>
+              <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                {([['warning', '超限', '#D93838', '#FFF0F0'], ['normal', '正常', '#237D17', '#EFF9EC'], ['all', '全部', '#515760', '#F1F3F6']] as [typeof paramFilter, string, string, string][]).map(([v, label, activeColor, activeBg]) => (
+                  <button key={v} onClick={() => setParamFilter(v)}
+                    style={{ padding: '2px 9px', border: `1px solid ${paramFilter === v ? activeColor : '#CDD2D9'}`, borderRadius: 999, fontSize: 10, fontWeight: paramFilter === v ? 700 : 400, background: paramFilter === v ? activeBg : '#fff', color: paramFilter === v ? activeColor : '#747A82', cursor: 'pointer', transition: 'all 80ms' }}>
+                    {label}
+                    {v !== 'all' && (
+                      <span style={{ marginLeft: 4, fontFamily: '"Inter Tight", sans-serif', fontWeight: 700 }}>
+                        {PROCESS_PARAMS.filter(p => v === 'warning' ? p.status !== 'normal' : p.status === 'normal').length}
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+                {PROCESS_PARAMS
+                  .filter(p => paramFilter === 'all' ? true : paramFilter === 'warning' ? p.status !== 'normal' : p.status === 'normal')
+                  .map((p) => (
+                    <button key={p.id} onClick={() => setSelectedParamId(p.id)}
+                      style={{ all: 'unset', cursor: 'pointer', display: 'block', borderRadius: 8, outline: selectedParamId === p.id ? `2px solid #004B8D` : '2px solid transparent', transition: 'outline 80ms' }}>
+                      <ParamCard p={p} isCurrent={selectedParamId === p.id} />
+                    </button>
+                  ))
+                }
+              </div>
+              {PROCESS_PARAMS.filter(p => paramFilter === 'all' ? true : paramFilter === 'warning' ? p.status !== 'normal' : p.status === 'normal').length === 0 && (
+                <div style={{ textAlign: 'center', padding: '18px 0', fontSize: 12, color: '#9FA6AF' }}>无{paramFilter === 'warning' ? '超限' : '正常'}参数</div>
+              )}
             </div>
           </div>
 
-          {/* Trend Charts */}
+          {/* Single Trend Chart — driven by selectedParamId */}
           <div style={{ flex: 1, background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.14)', boxShadow: '0 8px 24px rgba(27,39,52,0.07)', padding: '8px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Header row with sort button */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6, flexShrink: 0 }}>
-              <span style={{ fontSize: 10, color: '#747A82', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>历史趋势</span>
-              <div style={{ marginLeft: 'auto', position: 'relative' }}>
-                <button
-                  onClick={() => setSortPanelOpen((v) => !v)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '3px 10px 3px 8px',
-                    border: '1px solid #CDD2D9', borderRadius: 6,
-                    background: sortPanelOpen ? '#EEF5FB' : '#fff',
-                    color: '#515760', fontSize: 11, cursor: 'pointer',
-                    transition: 'all 120ms ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#82B9DD' }}
-                  onMouseLeave={(e) => { if (!sortPanelOpen) e.currentTarget.style.borderColor = '#CDD2D9' }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#747A82" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
-                  <span>排序</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9FA6AF" strokeWidth="2" strokeLinecap="round" style={{ transform: sortPanelOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease' }}><polyline points="6 9 12 15 18 9" /></svg>
-                </button>
-
-                {sortPanelOpen && (
-                  <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setSortPanelOpen(false)} />
-                    <div style={{
-                      position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200,
-                      background: '#fff', borderRadius: 10,
-                      border: '1px solid #E0E4E9',
-                      boxShadow: '0 8px 24px rgba(27,39,52,0.12)',
-                      padding: '6px 0',
-                      minWidth: 220,
-                    }}>
-                      <div style={{ padding: '4px 12px 6px', fontSize: 10, color: '#9FA6AF', borderBottom: '1px solid #F1F3F6', marginBottom: 4 }}>
-                        拖拽或点击箭头调整趋势图顺序
-                      </div>
-                      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-                        {selectedTrends.map((id, idx) => {
-                          const cfg = ALL_TRENDS[id]
-                          if (!cfg) return null
-                          return (
-                            <div
-                              key={id}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, idx)}
-                              onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx) }}
-                              onDragLeave={() => setDragOverIdx(null)}
-                              onDrop={(e) => handleDrop(e, idx)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 8,
-                                padding: '6px 10px',
-                                background: dragOverIdx === idx ? '#EEF5FB' : 'transparent',
-                                borderTop: dragOverIdx === idx ? `2px solid #004B8D` : '2px solid transparent',
-                                cursor: 'grab',
-                                transition: 'background 80ms ease',
-                                userSelect: 'none',
-                              }}
-                            >
-                              {/* Drag handle */}
-                              <svg width="10" height="14" viewBox="0 0 10 14" fill="#CDD2D9" style={{ flexShrink: 0 }}>
-                                <circle cx="3" cy="2" r="1.5"/><circle cx="7" cy="2" r="1.5"/>
-                                <circle cx="3" cy="7" r="1.5"/><circle cx="7" cy="7" r="1.5"/>
-                                <circle cx="3" cy="12" r="1.5"/><circle cx="7" cy="12" r="1.5"/>
-                              </svg>
-                              {/* Color pip */}
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
-                              {/* Label */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 11, color: '#171A1E', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cfg.name}</div>
-                                <div style={{ fontSize: 9, color: '#9FA6AF', fontFamily: '"JetBrains Mono", monospace' }}>{id}</div>
-                              </div>
-                              {/* Up / Down arrows */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); if (idx > 0) moveTrend(idx, idx - 1) }}
-                                  disabled={idx === 0}
-                                  style={{ width: 18, height: 18, border: '1px solid #E0E4E9', borderRadius: 4, background: '#fff', cursor: idx === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: idx === 0 ? 0.3 : 1 }}
-                                >
-                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#515760" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); if (idx < selectedTrends.length - 1) moveTrend(idx, idx + 1) }}
-                                  disabled={idx === selectedTrends.length - 1}
-                                  style={{ width: 18, height: 18, border: '1px solid #E0E4E9', borderRadius: 4, background: '#fff', cursor: idx === selectedTrends.length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: idx === selectedTrends.length - 1 ? 0.3 : 1 }}
-                                >
-                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#515760" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Chart grid — driven by selectedTrends, scrollable */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: `repeat(${Math.ceil(selectedTrends.length / 2)}, 200px)`, gap: 6 }}>
-              {selectedTrends.map((id) => {
-                const cfg = ALL_TRENDS[id]
-                if (!cfg) return null
-                return (
-                  <div key={id} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    {/* Minimal chart label: color line + ID + limits only */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2, paddingLeft: 2 }}>
-                      <div style={{ width: 10, height: 2, background: cfg.color, borderRadius: 1, flexShrink: 0 }} />
-                      <span style={{ fontSize: 9, fontFamily: '"JetBrains Mono", monospace', color: '#747A82' }}>{id}</span>
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, fontSize: 9 }}>
-                        <span style={{ color: '#D93838' }}>▲{cfg.high}</span>
-                        <span style={{ color: '#004B8D' }}>▼{cfg.low}</span>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={cfg.data} margin={{ top: 3, right: 6, left: -22, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E0E4E9" opacity={0.5} />
-                          <XAxis dataKey="t" tick={{ fontSize: 8, fill: '#9FA6AF' }} tickLine={false} interval={9} />
-                          <YAxis tick={{ fontSize: 8, fill: '#9FA6AF' }} tickLine={false} axisLine={false} />
-                          <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E0E4E9', background: '#fff', padding: '4px 8px' }} labelStyle={{ color: '#515760' }} formatter={(v) => [v, id]} />
-                          <ReferenceLine y={cfg.high} stroke="#D93838" strokeDasharray="4 2" strokeWidth={1} label={{ value: '上限', position: 'insideTopRight', fontSize: 8, fill: '#D93838' }} />
-                          <ReferenceLine y={cfg.low} stroke="#004B8D" strokeDasharray="4 2" strokeWidth={1} label={{ value: '下限', position: 'insideBottomRight', fontSize: 8, fill: '#004B8D' }} />
-                          <Line type="monotone" dataKey="v" stroke={cfg.color} strokeWidth={2} dot={false} activeDot={{ r: 3, fill: cfg.color }} />
-                        </LineChart>
-                      </ResponsiveContainer>
+            {(() => {
+              const cfg = ALL_TRENDS[selectedParamId]
+              const param = PROCESS_PARAMS.find(p => p.id === selectedParamId)
+              if (!cfg) return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9FA6AF', fontSize: 12 }}>请选择参数</div>
+              const isOver = param && param.status !== 'normal'
+              return (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexShrink: 0 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#171A1E' }}>{cfg.name}</span>
+                    <span style={{ fontSize: 10, fontFamily: '"JetBrains Mono", monospace', color: '#9FA6AF' }}>{selectedParamId}</span>
+                    {isOver && <span style={{ fontSize: 10, fontWeight: 700, color: '#D93838', background: '#FFF0F0', padding: '1px 7px', borderRadius: 999, border: '1px solid rgba(217,56,56,0.2)' }}>超限</span>}
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, fontSize: 10 }}>
+                      <span style={{ color: '#D93838', fontFamily: '"Inter Tight", sans-serif' }}>▲ 上限 {cfg.high} {cfg.unit}</span>
+                      <span style={{ color: '#004B8D', fontFamily: '"Inter Tight", sans-serif' }}>▼ 下限 {cfg.low} {cfg.unit}</span>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-            </div>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={cfg.data} margin={{ top: 6, right: 12, left: -18, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E0E4E9" opacity={0.5} />
+                        <XAxis dataKey="t" tick={{ fontSize: 9, fill: '#9FA6AF' }} tickLine={false} interval={4} />
+                        <YAxis tick={{ fontSize: 9, fill: '#9FA6AF' }} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={{ fontSize: 11, borderRadius: 7, border: '1px solid #E0E4E9', background: '#fff', padding: '5px 10px' }} labelStyle={{ color: '#515760' }} formatter={(v) => [`${v} ${cfg.unit}`, cfg.name]} />
+                        <ReferenceLine y={cfg.high} stroke="#D93838" strokeDasharray="4 2" strokeWidth={1.5} label={{ value: '上限', position: 'insideTopRight', fontSize: 9, fill: '#D93838' }} />
+                        <ReferenceLine y={cfg.low} stroke="#004B8D" strokeDasharray="4 2" strokeWidth={1.5} label={{ value: '下限', position: 'insideBottomRight', fontSize: 9, fill: '#004B8D' }} />
+                        <Line type="monotone" dataKey="v" stroke={cfg.color} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: cfg.color }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>

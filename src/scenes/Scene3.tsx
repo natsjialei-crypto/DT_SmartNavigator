@@ -647,7 +647,7 @@ function ConfigPanel({ planName, onClose, priority, onPriorityChange, matrix }: 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F1F3F6', position: 'sticky', top: 0, zIndex: 1 }}>
-                {['序号', '分组', '工艺参数说明', '扣分系列', '扣分限', '高高限', '高限', '低限', '低低限', '工艺参数对象', '开始表征', '终止表征判定'].map((h) => (
+                {['序号', '工艺参数说明', '扣分系列', '扣分限', '高高限', '高限', '低限', '低低限', '工艺参数对象', '开始表征', '终止表征判定'].map((h) => (
                   <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#515760', fontWeight: 600, fontSize: 11, borderBottom: '1px solid #CDD2D9', whiteSpace: 'nowrap', borderRight: '1px solid #E0E4E9' }}>
                     {h}
                   </th>
@@ -664,18 +664,6 @@ function ConfigPanel({ planName, onClose, priority, onPriorityChange, matrix }: 
                   onMouseLeave={(e) => { e.currentTarget.style.background = selectedRow === i ? '#EEF5FB' : 'transparent' }}
                 >
                   <td style={{ padding: '7px 10px', borderRight: '1px solid #E0E4E9', textAlign: 'center', fontWeight: 600, color: selectedRow === i ? '#004B8D' : '#171A1E', fontFamily: '"Inter Tight", sans-serif' }}>{row.seq}</td>
-                  <td style={{ padding: '7px 10px', borderRight: '1px solid #E0E4E9', whiteSpace: 'nowrap' }}>
-                    <select
-                      value={row.group}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => {}}
-                      style={{ fontSize: 12, border: '1px solid #CDD2D9', borderRadius: 4, padding: '2px 6px', background: '#fff', color: '#171A1E', cursor: 'pointer' }}
-                    >
-                      {Array.from(new Set(SHARED_PROC_ROWS.filter(r => r.type === '组标题').map(r => r.content))).map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </td>
                   <td style={{ padding: '7px 10px', borderRight: '1px solid #E0E4E9', fontWeight: 500, color: '#171A1E', whiteSpace: 'nowrap' }}>{row.paramDesc}</td>
                   <td style={{ padding: '7px 10px', borderRight: '1px solid #E0E4E9', textAlign: 'center', color: '#515760', fontFamily: '"Inter Tight", sans-serif' }}>{row.series}</td>
                   <td style={{ padding: '7px 10px', borderRight: '1px solid #E0E4E9', textAlign: 'center', color: '#515760', fontFamily: '"Inter Tight", sans-serif' }}>{row.deductLimit}</td>
@@ -690,7 +678,7 @@ function ConfigPanel({ planName, onClose, priority, onPriorityChange, matrix }: 
               ))}
               {Array.from({ length: 6 }).map((_, i) => (
                 <tr key={`empty-${i}`} style={{ borderBottom: '1px solid #E0E4E9', height: 36 }}>
-                  {Array.from({ length: 12 }).map((_, j) => (
+                  {Array.from({ length: 11 }).map((_, j) => (
                     <td key={j} style={{ borderRight: '1px solid #E0E4E9' }} />
                   ))}
                 </tr>
@@ -714,6 +702,7 @@ interface OpRecord {
   duration: number; avgDuration: number; totalSteps: number; doneSteps: number
   phase: 'pending-action' | 'pending-reset' | 'completed' | 'manually-ended'
   triggerMode: 'auto' | 'manual'
+  triggerEvent?: string; endEvent?: string
   steps: OpStep[]
 }
 
@@ -741,13 +730,13 @@ const BASE_STEPS: OpStep[] = [
 ]
 
 const OP_RECORDS: OpRecord[] = [
-  { id: 'r1', plan: '01 气化冷态开车',       section: '气化装置', operator: '张工', date: '2026-08-14 09:32', endTime: '2026-08-14 11:55', duration: 143, avgDuration: 155, totalSteps: 21, doneSteps: 21, phase: 'completed',       triggerMode: 'manual', steps: BASE_STEPS },
-  { id: 'r2', plan: '08 烧嘴压差波动',       section: '气化装置', operator: '王工', date: '2026-08-14 14:32', endTime: '2026-08-14 14:55', duration: 23,  avgDuration: 20,  totalSteps: 12, doneSteps: 12, phase: 'pending-reset',   triggerMode: 'auto',   steps: BASE_STEPS.slice(0,12).map((s,i) => ({...s, time:`14:${String(32+i).padStart(2,'0')}`})) },
-  { id: 'r3', plan: '06 紧急停车',           section: '气化装置', operator: '赵工', date: '2026-08-13 16:20', endTime: '2026-08-13 16:32', duration: 12,  avgDuration: 15,  totalSteps: 8,  doneSteps: 8,  phase: 'manually-ended',  triggerMode: 'auto',   steps: BASE_STEPS.slice(0,8).map((s,i)  => ({...s, time:`16:${String(20+i).padStart(2,'0')}`})) },
-  { id: 'r4', plan: '07 反应器床层温度高',   section: '甲醇装置', operator: '李工', date: '2026-08-12 09:15', endTime: '—',                duration: 45,  avgDuration: 30,  totalSteps: 15, doneSteps: 13, phase: 'pending-action',  triggerMode: 'auto',   steps: BASE_STEPS.slice(0,13).map((s,i) => ({...s, time:`09:${String(15+i).padStart(2,'0')}`})) },
-  { id: 'r5', plan: '05 停电应急',           section: '气化装置', operator: '张工', date: '2026-08-10 22:50', endTime: '2026-08-10 23:08', duration: 18,  avgDuration: 20,  totalSteps: 10, doneSteps: 10, phase: 'completed',       triggerMode: 'manual', steps: BASE_STEPS.slice(0,10).map((s,i) => ({...s, time:`22:${String(50+i).padStart(2,'0')}`})) },
-  { id: 'r6', plan: '09 汽包干烧紧急预案',   section: '甲醇装置', operator: '陈工', date: '2026-08-07 19:45', endTime: '2026-08-07 20:07', duration: 22,  avgDuration: 20,  totalSteps: 11, doneSteps: 11, phase: 'pending-reset',   triggerMode: 'auto',   steps: BASE_STEPS.slice(0,11).map((s,i) => ({...s, time:`19:${String(45+i).padStart(2,'0')}`})) },
-  { id: 'r7', plan: '10 空分跳车应急',       section: '气化装置', operator: '王工', date: '2026-08-05 08:30', endTime: '2026-08-05 08:48', duration: 18,  avgDuration: 25,  totalSteps: 15, doneSteps: 15, phase: 'completed',       triggerMode: 'manual', steps: BASE_STEPS.slice(0,15).map((s,i) => ({...s, time:`08:${String(30+i).padStart(2,'0')}`})) },
+  { id: 'r1', plan: '01 气化冷态开车',       section: '气化装置', operator: '张工', date: '2026-08-14 09:32', endTime: '2026-08-14 11:55', duration: 143, avgDuration: 155, totalSteps: 21, doneSteps: 21, phase: 'completed',       triggerMode: 'manual', triggerEvent: '班长手动下发开车指令',         endEvent: '全部步序确认完成，自动归档',   steps: BASE_STEPS },
+  { id: 'r2', plan: '08 烧嘴压差波动',       section: '气化装置', operator: '王工', date: '2026-08-14 14:32', endTime: '2026-08-14 14:55', duration: 23,  avgDuration: 20,  totalSteps: 12, doneSteps: 12, phase: 'pending-reset',   triggerMode: 'auto',   triggerEvent: 'PDI601 烧嘴压差超高限 1.2 MPa', endEvent: '步序完成，等待系统复位',       steps: BASE_STEPS.slice(0,12).map((s,i) => ({...s, time:`14:${String(32+i).padStart(2,'0')}`})) },
+  { id: 'r3', plan: '06 紧急停车',           section: '气化装置', operator: '赵工', date: '2026-08-13 16:20', endTime: '2026-08-13 16:32', duration: 12,  avgDuration: 15,  totalSteps: 8,  doneSteps: 8,  phase: 'manually-ended',  triggerMode: 'auto',   triggerEvent: 'TI302 出口温度越高高限 1550°C',  endEvent: '操作人员手动终止预案',         steps: BASE_STEPS.slice(0,8).map((s,i)  => ({...s, time:`16:${String(20+i).padStart(2,'0')}`})) },
+  { id: 'r4', plan: '07 反应器床层温度高',   section: '甲醇装置', operator: '李工', date: '2026-08-12 09:15', endTime: '—',                duration: 45,  avgDuration: 30,  totalSteps: 15, doneSteps: 13, phase: 'pending-action',  triggerMode: 'auto',   triggerEvent: 'TI303 床层温度持续上升超限',     endEvent: '—（预案仍在执行中）',          steps: BASE_STEPS.slice(0,13).map((s,i) => ({...s, time:`09:${String(15+i).padStart(2,'0')}`})) },
+  { id: 'r5', plan: '05 停电应急',           section: '气化装置', operator: '张工', date: '2026-08-10 22:50', endTime: '2026-08-10 23:08', duration: 18,  avgDuration: 20,  totalSteps: 10, doneSteps: 10, phase: 'completed',       triggerMode: 'manual', triggerEvent: '班长确认停电事故后手动触发',     endEvent: '全部步序确认完成，自动归档',   steps: BASE_STEPS.slice(0,10).map((s,i) => ({...s, time:`22:${String(50+i).padStart(2,'0')}`})) },
+  { id: 'r6', plan: '09 汽包干烧紧急预案',   section: '甲醇装置', operator: '陈工', date: '2026-08-07 19:45', endTime: '2026-08-07 20:07', duration: 22,  avgDuration: 20,  totalSteps: 11, doneSteps: 11, phase: 'pending-reset',   triggerMode: 'auto',   triggerEvent: 'LIC401 汽包液位低低限触发联锁',  endEvent: '步序完成，等待系统复位',       steps: BASE_STEPS.slice(0,11).map((s,i) => ({...s, time:`19:${String(45+i).padStart(2,'0')}`})) },
+  { id: 'r7', plan: '10 空分跳车应急',       section: '气化装置', operator: '王工', date: '2026-08-05 08:30', endTime: '2026-08-05 08:48', duration: 18,  avgDuration: 25,  totalSteps: 15, doneSteps: 15, phase: 'completed',       triggerMode: 'manual', triggerEvent: '班长现场确认空分联锁跳车后触发', endEvent: '全部步序确认完成，自动归档',   steps: BASE_STEPS.slice(0,15).map((s,i) => ({...s, time:`08:${String(30+i).padStart(2,'0')}`})) },
 ]
 
 // ─── Shared UI: SceneSidebar ──────────────────────────────────────────────────
@@ -893,43 +882,58 @@ function OpRecordDetail({ record, onBack, onFeedback, hasFeedback, onViewFeedbac
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#E9EDF2', position: 'relative' }}>
       {/* Top bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E0E4E9', padding: '12px 20px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12, fontWeight: 500 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
-          返回列表
-        </button>
-        <div style={{ width: 1, height: 20, background: '#E0E4E9' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#171A1E', lineHeight: 1.2 }}>{record.plan}</div>
-          <div style={{ fontSize: 11, color: '#747A82', marginTop: 2, fontFamily: '"JetBrains Mono", monospace' }}>
-            {record.date} · 执行人：{record.operator} · {record.section}
+      <div style={{ background: '#fff', borderBottom: '1px solid #E0E4E9', padding: '10px 20px', flexShrink: 0 }}>
+        {/* Row 1: back + title + actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
+            返回列表
+          </button>
+          <div style={{ width: 1, height: 20, background: '#E0E4E9' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#171A1E', lineHeight: 1.2 }}>{record.plan}</div>
+            <div style={{ fontSize: 11, color: '#747A82', marginTop: 2, fontFamily: '"JetBrains Mono", monospace' }}>
+              {record.date} · 执行人：{record.operator} · {record.section}
+            </div>
           </div>
+          {role === 'engineer' ? (
+            <button onClick={onViewFeedback}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12, transition: 'all 100ms' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#CDD2D9'; e.currentTarget.style.color = '#515760' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              查看反馈{FEEDBACK_DATA[record.id] ? ` (${FEEDBACK_DATA[record.id].length})` : ''}
+            </button>
+          ) : (
+            <button onClick={onFeedback}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: `1px solid ${hasFeedback ? 'rgba(57,197,35,0.4)' : '#CDD2D9'}`, borderRadius: 6, background: hasFeedback ? '#EFF9EC' : '#fff', cursor: 'pointer', color: hasFeedback ? '#237D17' : '#515760', fontSize: 12, transition: 'all 100ms' }}
+              onMouseEnter={(e) => { if (!hasFeedback) { e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' } }}
+              onMouseLeave={(e) => { if (!hasFeedback) { e.currentTarget.style.borderColor = '#CDD2D9'; e.currentTarget.style.color = '#515760' } }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+              {hasFeedback ? '查看/修改反馈' : '填写反馈'}
+            </button>
+          )}
+          <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            导出记录
+          </button>
         </div>
-        {role === 'engineer' ? (
-          <button
-            onClick={onViewFeedback}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12, transition: 'all 100ms' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#CDD2D9'; e.currentTarget.style.color = '#515760' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            查看反馈{FEEDBACK_DATA[record.id] ? ` (${FEEDBACK_DATA[record.id].length})` : ''}
-          </button>
-        ) : (
-          <button
-            onClick={onFeedback}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: `1px solid ${hasFeedback ? 'rgba(57,197,35,0.4)' : '#CDD2D9'}`, borderRadius: 6, background: hasFeedback ? '#EFF9EC' : '#fff', cursor: 'pointer', color: hasFeedback ? '#237D17' : '#515760', fontSize: 12, transition: 'all 100ms' }}
-            onMouseEnter={(e) => { if (!hasFeedback) { e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' } }}
-            onMouseLeave={(e) => { if (!hasFeedback) { e.currentTarget.style.borderColor = '#CDD2D9'; e.currentTarget.style.color = '#515760' } }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-            {hasFeedback ? '查看/修改反馈' : '填写反馈'}
-          </button>
-        )}
-        <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: '1px solid #CDD2D9', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#515760', fontSize: 12 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-          导出记录
-        </button>
+        {/* Row 2: event metadata strip */}
+        <div style={{ display: 'flex', gap: 0, background: '#F7F8FA', borderRadius: 8, border: '1px solid #E0E4E9', overflow: 'hidden' }}>
+          {[
+            { label: '触发事件', value: record.triggerEvent ?? '—', icon: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D93838" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, color: '#D93838' },
+            { label: '结束事件', value: record.endEvent ?? '—', icon: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#237D17" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>, color: '#237D17' },
+            { label: '触发方式', value: record.triggerMode === 'auto' ? '系统自动触发' : '操作人员手动触发', icon: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={record.triggerMode === 'auto' ? '#004B8D' : '#F28C28'} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, color: record.triggerMode === 'auto' ? '#004B8D' : '#F28C28' },
+          ].map((item, i) => (
+            <div key={item.label} style={{ flex: i < 2 ? 2 : 1, padding: '7px 14px', borderRight: i < 2 ? '1px solid #E0E4E9' : 'none', display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                {item.icon}
+                <span style={{ fontSize: 10, fontWeight: 600, color: '#747A82', whiteSpace: 'nowrap' }}>{item.label}</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#1A2D45', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable body */}
@@ -966,111 +970,11 @@ function OpRecordDetail({ record, onBack, onFeedback, hasFeedback, onViewFeedbac
           <span style={{ fontSize: 13, color: faster ? '#237D17' : diff > 0 ? '#7A4000' : '#1A2D45', lineHeight: 1.7 }}>{analysisText}</span>
         </div>
 
-        {/* ── Left / Right split: 工艺卡片 + 操作步序 ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 14, alignItems: 'start' }}>
+        {/* ── 操作步序记录（全宽） ── */}
+        <div>
 
-          {/* LEFT: 工艺卡片参数趋势 */}
+          {/* 操作步序记录 */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 16px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
-            <div style={{ padding: '11px 16px', borderBottom: '1px solid #E0E4E9', display: 'flex', alignItems: 'center', gap: 8, background: '#F9FAFB' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#004B8D" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#171A1E' }}>工艺卡片参数趋势</span>
-              <span style={{ fontSize: 11, color: '#9FA6AF', marginLeft: 4 }}>执行期间实时监测，按组展示</span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
-                {[['#D93838', '高高/低低限'], ['#F28C28', '高/低限']].map(([c, l]) => (
-                  <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#9FA6AF' }}>
-                    <svg width="16" height="6"><line x1="0" y1="3" x2="16" y2="3" stroke={c} strokeWidth="1.5" strokeDasharray="4 2" /></svg>
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {Object.entries(PROC_CARD_TRENDS).map(([groupName, params], gi) => (
-              <div key={groupName}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: 'linear-gradient(90deg,#EEF5FB,#F5F9FE 60%,#F9FAFB)', borderBottom: '1px solid #CDD2D9', borderLeft: '3px solid #004B8D', borderTop: gi > 0 ? '2px solid #E0E4E9' : 'none' }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 4, background: '#004B8D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: '"Inter Tight", sans-serif', flexShrink: 0 }}>{gi + 1}</div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1A2D45' }}>{groupName}</span>
-                  <span style={{ fontSize: 10, color: '#5A7899', background: '#D8E8F5', padding: '1px 7px', borderRadius: 999, fontFamily: '"Inter Tight", sans-serif', fontWeight: 500 }}>{params.length} 个参数</span>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', padding: '14px 16px 10px', gap: 12 }}>
-                  {params.map(({ param, values }, paramIdx) => {
-                    const lastVal = values[values.length - 1]
-                    const alarm = lastVal >= param.highHigh || lastVal <= param.lowLow
-                    const warn  = !alarm && (lastVal >= param.high || lastVal <= param.low)
-                    const statusColor = alarm ? '#D93838' : warn ? '#F28C28' : '#237D17'
-                    const statusLabel = alarm ? '越限' : warn ? '预警' : '正常'
-                    const trendColor = alarm ? '#D93838' : warn ? '#F28C28' : '#004B8D'
-
-                    return (
-                      <div key={param.seq} style={{ border: `1px solid ${alarm ? 'rgba(217,56,56,0.25)' : warn ? 'rgba(242,140,40,0.2)' : 'rgba(0,75,141,0.12)'}`, borderRadius: 10, padding: '12px 14px 10px', background: alarm ? '#FFF5F5' : warn ? '#FFFBF0' : '#F9FBFE', flex: '1 1 260px', minWidth: 260, position: 'relative' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-                          <div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#1A2D45' }}>{param.paramDesc}</div>
-                            <div style={{ fontSize: 10, color: '#9FA6AF', marginTop: 2, fontFamily: '"JetBrains Mono", monospace' }}>{param.paramObj}</div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 18, fontWeight: 800, color: trendColor, fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{lastVal.toFixed(1)}</div>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: statusColor, background: `${statusColor}18`, padding: '1px 6px', borderRadius: 999, display: 'inline-block', marginTop: 3 }}>{statusLabel}</span>
-                          </div>
-                        </div>
-
-                        <div style={{ paddingRight: 36 }}>
-                          <ParamTrendChart values={values} high={param.high} highHigh={param.highHigh} low={param.low} lowLow={param.lowLow} color={trendColor} />
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                          {[
-                            { label: `HH ${param.highHigh}`, color: '#D93838' },
-                            { label: `H ${param.high}`,       color: '#F28C28' },
-                            { label: `L ${param.low}`,        color: '#F28C28' },
-                            { label: `LL ${param.lowLow}`,    color: '#D93838' },
-                          ].map(({ label, color }) => (
-                            <span key={label} style={{ fontSize: 9, color, fontFamily: '"Inter Tight", sans-serif', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <span style={{ width: 10, height: 1.5, background: color, display: 'inline-block', borderRadius: 1 }} />{label}
-                            </span>
-                          ))}
-                          <span style={{ marginLeft: 'auto', fontSize: 9, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif' }}>扣分系数 {param.deductLimit}%</span>
-                        </div>
-
-                        {/* Zoom button — bottom right corner */}
-                        <button
-                          onClick={() => setZoomedChart({ groupName, paramIdx })}
-                          title="放大趋势图"
-                          style={{
-                            position: 'absolute',
-                            bottom: 8,
-                            right: 8,
-                            width: 22,
-                            height: 22,
-                            border: `1px solid ${alarm ? 'rgba(217,56,56,0.3)' : 'rgba(0,75,141,0.2)'}`,
-                            borderRadius: 5,
-                            background: alarm ? 'rgba(255,245,245,0.9)' : 'rgba(238,245,251,0.9)',
-                            color: trendColor,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 120ms ease',
-                            backdropFilter: 'blur(2px)',
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = trendColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = trendColor }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = alarm ? 'rgba(255,245,245,0.9)' : 'rgba(238,245,251,0.9)'; e.currentTarget.style.color = trendColor; e.currentTarget.style.borderColor = alarm ? 'rgba(217,56,56,0.3)' : 'rgba(0,75,141,0.2)' }}
-                        >
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                          </svg>
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* RIGHT: 操作步序 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 16px rgba(27,39,52,0.06)', overflow: 'hidden', position: 'sticky', top: 0 }}>
             <div style={{ padding: '11px 14px', borderBottom: '1px solid #E0E4E9', display: 'flex', alignItems: 'center', gap: 8, background: '#F9FAFB' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#004B8D" strokeWidth="2" strokeLinecap="round"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#171A1E' }}>操作步序记录</span>
@@ -1095,7 +999,7 @@ function OpRecordDetail({ record, onBack, onFeedback, hasFeedback, onViewFeedbac
                       {step.location === '现场' && <WrenchIcon />}
                       <span>{step.content}</span>
                     </span>
-                    <span style={{ fontSize: 10, color: '#515760', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.operator ?? '—'}</span>
+                    <span style={{ fontSize: 10, color: '#515760', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.location === '现场' ? (step.operator ?? '—') : 'DCS'}</span>
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid rgba(57,197,35,0.35)', background: '#EFF9EC', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#39C523' }}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -1106,6 +1010,7 @@ function OpRecordDetail({ record, onBack, onFeedback, hasFeedback, onViewFeedbac
               </div>
             ))}
           </div>
+
         </div>
       </div>
 
@@ -2284,36 +2189,6 @@ function ManagerOverviewPage({ onPage }: { plans?: Record<string, Plan[]>; onPag
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: '#EDF0F5' }}>
-      {/* ── Command header ── */}
-      <div style={{ background: '#001D38', borderBottom: '1px solid rgba(0,75,141,0.35)', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0 }}>
-        <div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase', fontFamily: '"Inter Tight", sans-serif', marginBottom: 3 }}>装置经理工作台</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>隐患 · 预案 · 运行 总览</div>
-        </div>
-        <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-        {[
-          { label: '隐患总数',     value: INIT_HAZARDS.length, unit: '项', color: '#82B9DD' },
-          { label: '未关联预案',   value: unlinkedHazards.length, unit: '项', color: unlinkedHazards.length > 0 ? '#F28C28' : '#39C523' },
-          { label: '本月触发',     value: PLAN_TRIGGER_FREQ.reduce((s, p) => s + p.count, 0), unit: '次', color: '#F2B544' },
-          { label: '高频隐患',     value: highFreqItems.length, unit: '项', color: highFreqItems.length > 2 ? '#D93838' : '#F28C28' },
-          { label: 'SOP待修正',   value: needsSOPFix.length, unit: '项', color: needsSOPFix.length > 0 ? '#D93838' : '#39C523' },
-          { label: '近期超时执行', value: belowAvgCount, unit: '次', color: belowAvgCount > 2 ? '#D93838' : '#F2B544' },
-        ].map(k => (
-          <div key={k.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 500, letterSpacing: '0.04em' }}>{k.label}</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-              <span style={{ fontSize: 20, fontWeight: 800, color: k.color, fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{k.value}</span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{k.unit}</span>
-            </div>
-          </div>
-        ))}
-        <div style={{ flex: 1 }} />
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)' }}>统计周期</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: '"Inter Tight", sans-serif' }}>2026 年 8 月</div>
-        </div>
-      </div>
-
       {/* ── 2-column main grid ── */}
       <div style={{ padding: '18px 22px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
@@ -2394,74 +2269,63 @@ function ManagerOverviewPage({ onPage }: { plans?: Record<string, Plan[]>; onPag
 
         {/* ══ SECTION 3: 预案执行评估 ══ */}
         <div style={{ ...card }}>
-          {cardHead(
-            '预案执行评估',
-            <span style={{ fontSize: 11, color: '#9FA6AF' }}>基于完成率 · 超时分析</span>,
-            needsSOPFix.length > 0 ? (
-              <span style={{ padding: '3px 9px', borderRadius: 999, background: '#FFF0F0', color: '#D93838', fontSize: 11, fontWeight: 700, border: '1px solid rgba(217,56,56,0.2)' }}>
-                {needsSOPFix.length} 项 SOP 待修正
-              </span>
-            ) : undefined,
-          )}
-
-          {/* SOP needs fix — warning items */}
-          {needsSOPFix.length > 0 && (
-            <div style={{ padding: '10px 16px', background: 'linear-gradient(135deg, #FFF8F8 0%, #FFFBF8 100%)', borderBottom: '1px solid #F2F4F7', flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#D93838', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D93838" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                以下预案执行效果欠佳，建议修正 SOP
+          {cardHead('预案执行评估', <span style={{ fontSize: 11, color: '#9FA6AF' }}>基于完成率 · 超时分析</span>)}
+          {/* Three-stat KPI row — mirroring 隐患管理 style */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, borderBottom: '1px solid #F2F4F7', flexShrink: 0 }}>
+            {[
+              { label: '预案总数', value: PLAN_EXEC_HEALTH.length, color: '#004B8D', border: 'rgba(0,75,141,0.15)' },
+              { label: '执行正常', value: PLAN_EXEC_HEALTH.filter(p => p.resolved).length, color: '#237D17', border: 'rgba(57,197,35,0.18)' },
+              { label: 'SOP待修正', value: PLAN_EXEC_HEALTH.filter(p => !p.resolved).length, color: PLAN_EXEC_HEALTH.some(p => !p.resolved) ? '#D93838' : '#237D17', border: PLAN_EXEC_HEALTH.some(p => !p.resolved) ? 'rgba(217,56,56,0.15)' : 'rgba(57,197,35,0.18)' },
+            ].map(k => (
+              <div key={k.label} style={{ padding: '12px 0', textAlign: 'center', borderRight: '1px solid #F2F4F7', borderBottom: `3px solid ${k.color}40` }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: k.color, fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{k.value}</div>
+                <div style={{ fontSize: 10, color: '#747A82', marginTop: 4 }}>{k.label}</div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {needsSOPFix.map(p => (
-                  <div key={p.planName} style={{ background: '#fff', borderRadius: 9, border: '1px solid rgba(217,56,56,0.18)', overflow: 'hidden' }}>
-                    <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                      onClick={() => setExpandedHazard(expandedHazard === p.planName ? null : p.planName)}>
-                      <div style={{ width: 3, height: 30, borderRadius: 2, background: p.completionRate < 75 ? '#D93838' : '#F28C28', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1A2D45' }}>{p.planName}</div>
-                        <div style={{ fontSize: 10, color: '#9FA6AF', marginTop: 1 }}>{p.section}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: p.completionRate < 75 ? '#D93838' : '#F28C28', fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{p.completionRate}%</div>
-                          <div style={{ fontSize: 9, color: '#9FA6AF' }}>完成率</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#D93838', fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{p.avgDur}m</div>
-                          <div style={{ fontSize: 9, color: '#9FA6AF' }}>均耗时</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 11, color: '#9FA6AF' }}>标准</div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#747A82', fontFamily: '"Inter Tight", sans-serif' }}>{p.stdDur}m</div>
-                        </div>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FA6AF" strokeWidth="2" strokeLinecap="round" style={{ transform: expandedHazard === p.planName ? 'rotate(90deg)' : 'none', transition: 'transform 150ms ease' }}><polyline points="9 18 15 12 9 6"/></svg>
-                      </div>
-                    </div>
-                    {expandedHazard === p.planName && (
-                      <div style={{ padding: '0 12px 10px 28px', borderTop: '1px solid #F9ECEC' }}>
-                        <div style={{ fontSize: 11, color: '#D93838', lineHeight: 1.5, marginBottom: 8 }}>{p.issue}</div>
-                        <NavChip label="前往修正 SOP" page="plan-manage" color="#D93838" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Healthy plans */}
+            ))}
+          </div>
+          {/* SOP fix list only — no healthy plans list */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px 14px' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#747A82', marginBottom: 8 }}>执行正常预案</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {healthOk.map(p => (
-                <div key={p.planName} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', background: '#F7FCF7', borderRadius: 8, border: '1px solid rgba(57,197,35,0.15)' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#39C523" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#1A2D45' }}>{p.planName}</span>
-                  <span style={{ fontSize: 10, color: '#237D17', fontFamily: '"Inter Tight", sans-serif', fontWeight: 700 }}>{p.completionRate}%</span>
-                  <span style={{ fontSize: 10, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif' }}>{p.avgDur}m / {p.stdDur}m</span>
+            {needsSOPFix.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#237D17', fontSize: 12, fontWeight: 600 }}>✓ 所有预案执行效果良好</div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D93838" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#D93838' }}>以下预案执行效果欠佳，建议修正 SOP</span>
                 </div>
-              ))}
-            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {needsSOPFix.map(p => (
+                    <div key={p.planName} style={{ background: '#fff', borderRadius: 9, border: '1px solid rgba(217,56,56,0.18)', overflow: 'hidden' }}>
+                      <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                        onClick={() => setExpandedHazard(expandedHazard === p.planName ? null : p.planName)}>
+                        <div style={{ width: 3, height: 30, borderRadius: 2, background: p.completionRate < 75 ? '#D93838' : '#F28C28', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#1A2D45' }}>{p.planName}</div>
+                          <div style={{ fontSize: 10, color: '#9FA6AF', marginTop: 1 }}>{p.section}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: p.completionRate < 75 ? '#D93838' : '#F28C28', fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{p.completionRate}%</div>
+                            <div style={{ fontSize: 9, color: '#9FA6AF' }}>完成率</div>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#D93838', fontFamily: '"Inter Tight", sans-serif', lineHeight: 1 }}>{p.avgDur}m</div>
+                            <div style={{ fontSize: 9, color: '#9FA6AF' }}>均耗时</div>
+                          </div>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9FA6AF" strokeWidth="2" strokeLinecap="round" style={{ transform: expandedHazard === p.planName ? 'rotate(90deg)' : 'none', transition: 'transform 150ms ease' }}><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                      </div>
+                      {expandedHazard === p.planName && (
+                        <div style={{ padding: '0 12px 10px 28px', borderTop: '1px solid #F9ECEC' }}>
+                          <div style={{ fontSize: 11, color: '#D93838', lineHeight: 1.5, marginBottom: 8 }}>{p.issue}</div>
+                          <NavChip label="前往修正 SOP" page="plan-manage" color="#D93838" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -2635,9 +2499,13 @@ function ManagerOverviewPage({ onPage }: { plans?: Record<string, Plan[]>; onPag
 }
 
 function OverviewPage({ role, plans, onPage }: { role: 'engineer' | 'supervisor' | 'manager'; plans?: Record<string, Plan[]>; onPage?: (p: string) => void }) {
+  const [activeModal, setActiveModal] = useState<OpRecord | null>(null)
+
   if (role === 'manager') {
     return <ManagerOverviewPage plans={plans} onPage={onPage} />
   }
+
+  const activeExecRecords = OP_RECORDS.filter(r => r.phase === 'pending-action' || r.phase === 'pending-reset')
 
   const totalPlans = plans ? Object.values(plans).reduce((s, arr) => s + arr.length, 0) : 0
   const enabledPlans = plans ? Object.values(plans).reduce((s, arr) => s + arr.filter(p => p.status === 'enabled').length, 0) : 0
@@ -2679,48 +2547,242 @@ function OverviewPage({ role, plans, onPage }: { role: 'engineer' | 'supervisor'
           </div>
           <div style={{ fontSize: 13, opacity: 0.75 }}>XX化工有限公司 · DCS 预案管理平台</div>
         </div>
-        <div style={{ textAlign: 'right', opacity: 0.7 }}>
-          <div style={{ fontSize: 11 }}>今日日期</div>
-          <div style={{ fontSize: 14, fontWeight: 600, fontFamily: '"Inter Tight", monospace' }}>2026-08-31</div>
-        </div>
+        {role !== 'supervisor' && (
+          <div style={{ textAlign: 'right', opacity: 0.7 }}>
+            <div style={{ fontSize: 11 }}>今日日期</div>
+            <div style={{ fontSize: 14, fontWeight: 600, fontFamily: '"Inter Tight", monospace' }}>2026-08-31</div>
+          </div>
+        )}
       </div>
 
       {/* KPI row */}
       <div style={{ display: 'flex', gap: 12 }}>
         {role === 'engineer' && <>
           {card('已编制预案数', totalPlans, '条', '含草稿与启用')}
-          {card('已启用预案', enabledPlans, '条', `占比 ${Math.round(enabledPlans / Math.max(totalPlans, 1) * 100)}%`, '#237D17')}
-          {card('本月知识库新增', 4, '篇', '文档 2 · 规程 2')}
-          {card('报警优先级变更', 1, '次', '本月最近更新')}
+          {card('草稿待完善', Object.values(plans ?? {}).flat().filter(p => p.status === 'draft').length, '条', '未启用草稿', '#F28C28')}
+          {card('SOP待修正', 2, '项', '执行效果欠佳', '#D93838')}
+          {card('隐患未关联预案', INIT_HAZARDS.filter(h => !h.linkedPlan).length, '项', '存在应急盲区', INIT_HAZARDS.some(h => !h.linkedPlan) ? '#D93838' : '#237D17')}
         </>}
         {role === 'supervisor' && <>
+          {card('待处理事项', OP_RECORDS.filter(r => r.phase === 'pending-action' || r.phase === 'pending-reset').length, '项', '需关注处置', '#D93838')}
+          {card('隐患未关联预案', INIT_HAZARDS.filter(h => !h.linkedPlan).length, '项', '存在应急盲区', INIT_HAZARDS.some(h => !h.linkedPlan) ? '#F28C28' : '#237D17')}
+          {card('高频触发隐患', PLAN_TRIGGER_FREQ.filter(p => p.count >= 4).length, '项', '触发≥4次/月', '#F28C28')}
           {card('本月操作记录', OP_RECORDS.length, '条', '含全部状态', '#004B8D')}
-          {card('正常完成率', normalRate, '%', '已完成/总记录', normalRate >= 80 ? '#237D17' : '#F28C28')}
-          {card('平均操作时长', avgDur, 'min', '基准 25 min', avgDur > 25 ? '#F28C28' : '#237D17')}
-          {card('待复位预案', pendingReset, '条', '需手动复位', pendingReset > 0 ? '#F28C28' : '#237D17')}
         </>}
       </div>
 
-      {/* Quick links (engineer) */}
+      {/* 实时执行预案列表（工艺工程师 & 班长共用） */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #E0E4E9', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#39C523', boxShadow: '0 0 0 3px rgba(57,197,35,0.2)', animation: 'none' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#171A1E' }}>实时执行预案</span>
+          <span style={{ fontSize: 11, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif' }}>当前 {activeExecRecords.length} 条正在执行</span>
+        </div>
+        {activeExecRecords.length === 0 ? (
+          <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 12, color: '#9FA6AF' }}>当前无正在执行的预案</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#F7F8FA' }}>
+                {['预案名称', '装置/工段', '触发方式', '触发事件', '执行人', '进度', '状态', ''].map(h => (
+                  <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#747A82', borderBottom: '1px solid #E0E4E9', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {activeExecRecords.map(r => {
+                const isPendingAction = r.phase === 'pending-action'
+                const statusColor = isPendingAction ? '#D93838' : '#F28C28'
+                const statusLabel = isPendingAction ? '执行中' : '待复位'
+                const pct = Math.round((r.doneSteps / r.totalSteps) * 100)
+                return (
+                  <tr key={r.id} style={{ borderBottom: '1px solid #F2F4F7' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F7F9FC')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <td style={{ padding: '10px 14px', fontWeight: 600, color: '#1A2D45' }}>{r.plan}</td>
+                    <td style={{ padding: '10px 14px', color: '#515760' }}>{r.section}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: r.triggerMode === 'auto' ? '#004B8D' : '#8B6200', background: r.triggerMode === 'auto' ? '#EEF5FB' : '#FFFBF0', padding: '2px 7px', borderRadius: 999, border: `1px solid ${r.triggerMode === 'auto' ? 'rgba(0,75,141,0.2)' : 'rgba(242,140,40,0.2)'}` }}>
+                        {r.triggerMode === 'auto' ? '自动' : '手动'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 14px', color: '#747A82', fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.triggerEvent ?? '—'}</td>
+                    <td style={{ padding: '10px 14px', color: '#515760' }}>{r.operator}</td>
+                    <td style={{ padding: '10px 14px', minWidth: 100 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ flex: 1, height: 5, background: '#F1F3F6', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: statusColor, borderRadius: 3 }} />
+                        </div>
+                        <span style={{ fontSize: 10, color: '#747A82', fontFamily: '"Inter Tight", sans-serif', whiteSpace: 'nowrap' }}>{r.doneSteps}/{r.totalSteps}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: statusColor, background: `${statusColor}15`, padding: '2px 8px', borderRadius: 999 }}>{statusLabel}</span>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <button onClick={() => setActiveModal(r)}
+                        style={{ fontSize: 11, fontWeight: 600, color: '#004B8D', background: '#EEF5FB', border: '1px solid rgba(0,75,141,0.2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        查看
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* 待办事项 (engineer) */}
       {role === 'engineer' && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', padding: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#171A1E', marginBottom: 12 }}>快捷入口</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-            {[
-              { key: 'op-records',     icon: <IconRecords />, label: '操作记录' },
-              { key: 'plan-manage',    icon: <IconPlan />,    label: '预案管理' },
-              { key: 'alarm-priority', icon: <IconAlarmPri />, label: '报警矩阵' },
-              { key: 'knowledge-base', icon: <IconBook />,    label: '知识库' },
-            ].map(({ key, icon, label }) => (
-              <button key={key} onClick={() => onPage?.(key)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 8px', border: '1px solid #E0E4E9', borderRadius: 10, background: '#F7F8FA', cursor: 'pointer', transition: 'all 100ms', color: '#515760' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF5FB'; e.currentTarget.style.borderColor = '#82B9DD'; e.currentTarget.style.color = '#004B8D' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#F7F8FA'; e.currentTarget.style.borderColor = '#E0E4E9'; e.currentTarget.style.color = '#515760' }}
-              >
-                {icon}
-                <span style={{ fontSize: 12, fontWeight: 500 }}>{label}</span>
-              </button>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #E0E4E9' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#171A1E' }}>待办事项</span>
+          </div>
+          <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Draft plans */}
+            {Object.values(plans ?? {}).flat().filter(p => p.status === 'draft').map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#FFFBF0', borderRadius: 8, border: '1px solid rgba(242,181,68,0.25)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: '#F2B544', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#8B6200', fontWeight: 600, flex: 1 }}>草稿预案：{p.name}</span>
+                <span style={{ fontSize: 10, color: '#F2B544', background: '#FFF8E0', padding: '2px 7px', borderRadius: 999, fontWeight: 600 }}>未启用</span>
+              </div>
             ))}
+            {/* SOP fix items */}
+            {PLAN_EXEC_HEALTH.filter(p => !p.resolved).map(p => (
+              <div key={p.planName} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#FFF8F8', borderRadius: 8, border: '1px solid rgba(217,56,56,0.18)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: '#D93838', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#D93838', fontWeight: 600, flex: 1 }}>SOP待修正：{p.planName}</span>
+                <span style={{ fontSize: 10, color: '#D93838', background: '#FFF0F0', padding: '2px 7px', borderRadius: 999, fontWeight: 600 }}>执行欠佳</span>
+              </div>
+            ))}
+            {/* Unlinked hazards */}
+            {INIT_HAZARDS.filter(h => !h.linkedPlan).map(h => (
+              <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#FFF0F0', borderRadius: 8, border: '1px solid rgba(217,56,56,0.15)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: '#D93838', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#D93838', fontWeight: 600, flex: 1 }}>隐患未关联：{h.name}</span>
+                <span style={{ fontSize: 10, color: '#515760', background: '#F1F3F6', padding: '2px 7px', borderRadius: 999 }}>{h.device} · {h.unit}</span>
+              </div>
+            ))}
+            {Object.values(plans ?? {}).flat().filter(p => p.status === 'draft').length === 0 && PLAN_EXEC_HEALTH.filter(p => !p.resolved).length === 0 && INIT_HAZARDS.filter(h => !h.linkedPlan).length === 0 && (
+              <div style={{ textAlign: 'center', color: '#237D17', fontSize: 12, fontWeight: 600, padding: '12px 0' }}>✓ 暂无待办事项</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 各装置预案组态概览 (engineer) */}
+      {role === 'engineer' && (() => {
+        const devices = Object.keys(plans ?? {})
+        return (
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #E0E4E9' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#171A1E' }}>各装置预案组态概览</span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#F7F8FA' }}>
+                  {['装置', '预案总数', '已启用', '草稿', '已停用'].map(h => (
+                    <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#747A82', borderBottom: '1px solid #E0E4E9' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {devices.map(dev => {
+                  const arr = plans?.[dev] ?? []
+                  const enabled = arr.filter(p => p.status === 'enabled').length
+                  const draft = arr.filter(p => p.status === 'draft').length
+                  const disabled = arr.filter(p => p.status === 'disabled').length
+                  return (
+                    <tr key={dev} style={{ borderBottom: '1px solid #F2F4F7' }} onMouseEnter={e => (e.currentTarget.style.background = '#F7F9FC')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <td style={{ padding: '9px 14px', fontWeight: 600, color: '#1A2D45' }}>{dev}</td>
+                      <td style={{ padding: '9px 14px', color: '#515760', fontFamily: '"Inter Tight", sans-serif', fontWeight: 700 }}>{arr.length}</td>
+                      <td style={{ padding: '9px 14px' }}><span style={{ fontSize: 11, fontWeight: 600, color: '#237D17', background: '#EFF9EC', padding: '2px 8px', borderRadius: 999 }}>{enabled}</span></td>
+                      <td style={{ padding: '9px 14px' }}><span style={{ fontSize: 11, fontWeight: 600, color: '#8B6200', background: '#FFFBF0', padding: '2px 8px', borderRadius: 999 }}>{draft}</span></td>
+                      <td style={{ padding: '9px 14px' }}><span style={{ fontSize: 11, color: '#747A82', background: '#F1F3F6', padding: '2px 8px', borderRadius: 999 }}>{disabled}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
+
+      {/* 多维度执行数据 (supervisor) */}
+      {role === 'supervisor' && (
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #E0E4E9' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#171A1E' }}>多维度执行数据</span>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#F7F8FA' }}>
+                {['周期', '操作记录数', '正常完成率', '平均耗时', '环比', '同比'].map(h => (
+                  <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#747A82', borderBottom: '1px solid #E0E4E9', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { period: '今日', records: 3, rate: 100, dur: 21, momDelta: -8, momLabel: '环比昨日', yoyDelta: +12 },
+                { period: '本周', records: 18, rate: 89, dur: 24, momDelta: +5, momLabel: '环比上周', yoyDelta: +7 },
+                { period: '本月', records: OP_RECORDS.length, rate: normalRate, dur: avgDur, momDelta: +3, momLabel: '环比上月', yoyDelta: -2 },
+              ].map(row => {
+                const momColor = row.momDelta === 0 ? '#9FA6AF' : row.momDelta < 0 ? '#237D17' : '#D93838'
+                const yoyColor = row.yoyDelta >= 0 ? '#237D17' : '#D93838'
+                return (
+                  <tr key={row.period} style={{ borderBottom: '1px solid #F2F4F7' }} onMouseEnter={e => (e.currentTarget.style.background = '#F7F9FC')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#1A2D45' }}>{row.period}</td>
+                    <td style={{ padding: '9px 14px', fontFamily: '"Inter Tight", sans-serif', fontWeight: 700, color: '#004B8D' }}>{row.records}</td>
+                    <td style={{ padding: '9px 14px' }}>
+                      <span style={{ fontFamily: '"Inter Tight", sans-serif', fontWeight: 700, color: row.rate >= 90 ? '#237D17' : '#F28C28' }}>{row.rate}%</span>
+                    </td>
+                    <td style={{ padding: '9px 14px', fontFamily: '"Inter Tight", sans-serif', color: row.dur > 25 ? '#F28C28' : '#515760' }}>{row.dur} min</td>
+                    <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: momColor, fontFamily: '"Inter Tight", sans-serif' }}>
+                        {row.momDelta > 0 ? '▲' : row.momDelta < 0 ? '▼' : '–'} {Math.abs(row.momDelta)}%
+                      </span>
+                      <span style={{ fontSize: 10, color: '#9FA6AF', marginLeft: 4 }}>{row.momLabel}</span>
+                    </td>
+                    <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: yoyColor, fontFamily: '"Inter Tight", sans-serif' }}>
+                        {row.yoyDelta >= 0 ? '▲' : '▼'} {Math.abs(row.yoyDelta)}%
+                      </span>
+                      <span style={{ fontSize: 10, color: '#9FA6AF', marginLeft: 4 }}>同比去年</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 隐患状态提醒 (supervisor) */}
+      {role === 'supervisor' && (
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(96,108,122,0.12)', boxShadow: '0 4px 12px rgba(27,39,52,0.06)', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #E0E4E9' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#171A1E' }}>隐患状态提醒</span>
+          </div>
+          <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {INIT_HAZARDS.filter(h => !h.linkedPlan).map(h => (
+              <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#FFF8F8', borderRadius: 8, border: '1px solid rgba(217,56,56,0.15)', pointerEvents: 'none' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D93838" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span style={{ fontSize: 12, color: '#D93838', fontWeight: 600, flex: 1 }}>未关联处置预案：{h.name}</span>
+                <span style={{ fontSize: 10, color: '#9FA6AF' }}>{h.device}</span>
+              </div>
+            ))}
+            {PLAN_TRIGGER_FREQ.filter(p => p.count >= 4).map(p => (
+              <div key={p.hazardId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#FFFBF0', borderRadius: 8, border: '1px solid rgba(242,140,40,0.2)', pointerEvents: 'none' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F28C28" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style={{ fontSize: 12, color: '#8B6200', fontWeight: 600, flex: 1 }}>高频触发隐患：{p.hazardName}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#D93838', fontFamily: '"Inter Tight", sans-serif' }}>本月触发 {p.count} 次</span>
+              </div>
+            ))}
+            {INIT_HAZARDS.filter(h => !h.linkedPlan).length === 0 && PLAN_TRIGGER_FREQ.filter(p => p.count >= 4).length === 0 && (
+              <div style={{ textAlign: 'center', color: '#237D17', fontSize: 12, fontWeight: 600, padding: '12px 0' }}>✓ 暂无隐患提醒</div>
+            )}
           </div>
         </div>
       )}
@@ -2757,12 +2819,120 @@ function OverviewPage({ role, plans, onPage }: { role: 'engineer' | 'supervisor'
           </table>
         </div>
       )}
+
+      {/* ── 执行进度弹窗 ── */}
+      {activeModal && (() => {
+        const rec = activeModal
+        const isPendingAction = rec.phase === 'pending-action'
+        const statusColor = isPendingAction ? '#D93838' : '#F28C28'
+        const statusLabel = isPendingAction ? '执行中' : '待复位'
+        const pct = Math.round((rec.doneSteps / rec.totalSteps) * 100)
+
+        // Group steps by groupTitle
+        const groupMap = new Map<string, OpStep[]>()
+        for (const s of rec.steps) {
+          const g = s.groupTitle || '未分组'
+          if (!groupMap.has(g)) groupMap.set(g, [])
+          groupMap.get(g)!.push(s)
+        }
+        const groups: [string, OpStep[]][] = Array.from(groupMap.entries())
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,20,38,0.55)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+            onClick={() => setActiveModal(null)}>
+            <div style={{ background: '#fff', borderRadius: 16, width: 680, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(10,20,38,0.28)', overflow: 'hidden' }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* Modal header */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #E0E4E9', background: '#F9FAFB', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#171A1E' }}>{rec.plan}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}15`, padding: '2px 8px', borderRadius: 999, border: `1px solid ${statusColor}30` }}>{statusLabel}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: rec.triggerMode === 'auto' ? '#004B8D' : '#8B6200', background: rec.triggerMode === 'auto' ? '#EEF5FB' : '#FFFBF0', padding: '2px 7px', borderRadius: 999 }}>
+                      {rec.triggerMode === 'auto' ? '自动触发' : '手动触发'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#747A82', flexWrap: 'wrap' }}>
+                    <span>执行人：<strong style={{ color: '#515760' }}>{rec.operator}</strong></span>
+                    <span>装置：<strong style={{ color: '#515760' }}>{rec.section}</strong></span>
+                    <span>开始：<strong style={{ color: '#515760' }}>{rec.date}</strong></span>
+                    {rec.triggerEvent && <span>触发事件：<strong style={{ color: '#515760' }}>{rec.triggerEvent}</strong></span>}
+                  </div>
+                </div>
+                <button onClick={() => setActiveModal(null)} style={{ width: 28, height: 28, border: '1px solid #E0E4E9', borderRadius: 7, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#747A82', flexShrink: 0 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid #E0E4E9', background: '#fff', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 11, color: '#747A82', whiteSpace: 'nowrap' }}>执行进度</span>
+                <div style={{ flex: 1, height: 8, background: '#F1F3F6', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${statusColor}, ${statusColor}CC)`, borderRadius: 4, transition: 'width 500ms ease' }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: statusColor, fontFamily: '"Inter Tight", sans-serif', whiteSpace: 'nowrap' }}>{rec.doneSteps} / {rec.totalSteps} 步 ({pct}%)</span>
+              </div>
+
+              {/* Step list */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {/* Column header */}
+                <div style={{ display: 'grid', gridTemplateColumns: '36px 44px 1fr 60px 28px', padding: '0 14px', height: 30, alignItems: 'center', background: '#F7F8FA', borderBottom: '1px solid #E0E4E9', fontSize: 10, color: '#747A82', fontWeight: 600, gap: 4, position: 'sticky', top: 0 }}>
+                  <span>步序</span><span>时刻</span><span>操作内容</span><span>操作人</span><span />
+                </div>
+                {groups.map(([groupTitle, gSteps], gi) => (
+                  <div key={gi}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px', background: 'linear-gradient(90deg,#EEF5FB,#F5F9FE 60%,#F9FAFB)', borderBottom: '1px solid #CDD2D9', borderLeft: '3px solid #004B8D', borderTop: gi > 0 ? '2px solid #E0E4E9' : 'none' }}>
+                      <div style={{ width: 15, height: 15, borderRadius: 4, background: '#004B8D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{gi + 1}</div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#1A2D45', flex: 1 }}>{groupTitle}</span>
+                      <span style={{ fontSize: 9, color: '#5A7899', background: '#D8E8F5', padding: '1px 6px', borderRadius: 999 }}>{gSteps.length} 步</span>
+                    </div>
+                    {gSteps.map((step) => {
+                      const done = step.seq <= rec.doneSteps
+                      const isCurrent = step.seq === rec.doneSteps + 1
+                      const bg = done ? '#F7FCF5' : isCurrent ? '#FFFBF0' : '#FAFBFC'
+                      const borderL = done ? '#39C523' : isCurrent ? '#F28C28' : '#E0E4E9'
+                      return (
+                        <div key={step.seq} style={{ display: 'grid', gridTemplateColumns: '36px 44px 1fr 60px 28px', padding: '7px 14px', borderBottom: '1px solid #E9EDF2', alignItems: 'center', gap: 4, background: bg, borderLeft: `3px solid ${borderL}` }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#9FA6AF', fontFamily: '"Inter Tight", sans-serif', textAlign: 'center' }}>{step.seq}</span>
+                          <span style={{ fontSize: 9, color: '#747A82', fontFamily: '"JetBrains Mono", monospace' }}>{done || isCurrent ? step.time : '—'}</span>
+                          <span style={{ fontSize: 11, color: isCurrent ? '#8B6200' : done ? '#515760' : '#9FA6AF', lineHeight: 1.4, display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                            {step.location === '现场' && <WrenchIcon />}
+                            <span>{step.content}</span>
+                            {isCurrent && <span style={{ fontSize: 9, fontWeight: 700, color: '#F28C28', background: '#FFF0D0', padding: '1px 5px', borderRadius: 999, flexShrink: 0, marginLeft: 4 }}>当前</span>}
+                          </span>
+                          <span style={{ fontSize: 10, color: '#515760', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {done ? (step.location === '现场' ? (step.operator ?? '—') : 'DCS') : '—'}
+                          </span>
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            {done ? (
+                              <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid rgba(57,197,35,0.35)', background: '#EFF9EC', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#39C523' }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              </div>
+                            ) : isCurrent ? (
+                              <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid rgba(242,140,40,0.4)', background: '#FFF8E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#F28C28' }} />
+                              </div>
+                            ) : (
+                              <div style={{ width: 18, height: 18, borderRadius: 5, border: '1.5px solid #E0E4E9', background: '#F7F8FA' }} />
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
 
 const MGR_NAV: NavItem[] = [
-  { key: 'overview',        label: '总览',         sub: '数据看板 · 快捷入口',   icon: <IconHome /> },
+  { key: 'overview',        label: '总览',         sub: '核心指标 · 数据总览',   icon: <IconHome /> },
   { key: 'device-monitor', label: '装置预案监控', sub: '触发 KPI · 工段频率',    icon: <IconMonitor /> },
   { key: 'section-monitor', label: '工段预案监控', sub: '执行分析 · 历史事件',   icon: <IconSection /> },
   { key: 'plan-manage',     label: '预案管理',     sub: '组态 · 启用 · 版本',    icon: <IconBook /> },
@@ -2902,8 +3072,21 @@ function PlanManagementPanel({ role, sections, plans, setPlans, configPlan, setC
   const [selectedSection, setSelectedSection] = useState(sections[0] ?? '')
   const [viewPlan,        setViewPlan]        = useState<string | null>(null)
   const [viewHistory,     setViewHistory]     = useState<string | null>(null)
+  // ── plan list filter state ──
+  const [planSearch,     setPlanSearch]     = useState('')
+  const [filterStatus,   setFilterStatus]   = useState<'all' | 'enabled' | 'disabled' | 'draft'>('all')
+  const [filterHazard,   setFilterHazard]   = useState<'all' | 'linked' | 'unlinked'>('all')
+  // ── asset tree state ──
+  const [treeExpanded, setTreeExpanded] = useState<Set<string>>(new Set(HAZARD_ASSET_TREE.map(d => d.id)))
 
-  // resolve device key from tree selection
+  // map plan name → linked hazard name (from INIT_HAZARDS)
+  const planHazardMap = useMemo(() => {
+    const m: Record<string, string> = {}
+    INIT_HAZARDS.forEach(h => { if (h.linkedPlan) m[h.linkedPlan] = h.name })
+    return m
+  }, [])
+
+  // resolve device key from tree selection — must be computed before useMemo below
   const resolvedDevice = selectedSection === '全部' ? null
     : selectedSection.includes('::') ? selectedSection.split('::')[0]
     : selectedSection
@@ -2932,6 +3115,14 @@ function PlanManagementPanel({ role, sections, plans, setPlans, configPlan, setC
     })
   }
 
+  const filteredPlans = useMemo(() => currentPlans.filter(p => {
+    if (planSearch.trim() && !p.name.includes(planSearch.trim())) return false
+    if (filterStatus !== 'all' && p.status !== filterStatus) return false
+    if (filterHazard === 'linked'   && !planHazardMap[p.name]) return false
+    if (filterHazard === 'unlinked' && !!planHazardMap[p.name]) return false
+    return true
+  }), [currentPlans, planSearch, filterStatus, filterHazard, planHazardMap])
+
   if (viewHistory) {
     return <PlanHistoryPage planName={viewHistory} onBack={() => setViewHistory(null)} />
   }
@@ -2950,28 +3141,6 @@ function PlanManagementPanel({ role, sections, plans, setPlans, configPlan, setC
       </div>
     )
   }
-
-  // ── plan list filter state ──
-  const [planSearch,     setPlanSearch]     = useState('')
-  const [filterStatus,   setFilterStatus]   = useState<'all' | 'enabled' | 'disabled' | 'draft'>('all')
-  const [filterHazard,   setFilterHazard]   = useState<'all' | 'linked' | 'unlinked'>('all')
-  // ── asset tree state ──
-  const [treeExpanded, setTreeExpanded] = useState<Set<string>>(new Set(HAZARD_ASSET_TREE.map(d => d.id)))
-
-  // map plan name → linked hazard name (from INIT_HAZARDS)
-  const planHazardMap = useMemo(() => {
-    const m: Record<string, string> = {}
-    INIT_HAZARDS.forEach(h => { if (h.linkedPlan) m[h.linkedPlan] = h.name })
-    return m
-  }, [])
-
-  const filteredPlans = useMemo(() => currentPlans.filter(p => {
-    if (planSearch.trim() && !p.name.includes(planSearch.trim())) return false
-    if (filterStatus !== 'all' && p.status !== filterStatus) return false
-    if (filterHazard === 'linked'   && !planHazardMap[p.name]) return false
-    if (filterHazard === 'unlinked' && !!planHazardMap[p.name]) return false
-    return true
-  }), [currentPlans, planSearch, filterStatus, filterHazard, planHazardMap])
 
   const PlanChip = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
     <button onClick={onClick} style={{ padding: '3px 9px', border: `1px solid ${active ? '#004B8D' : '#CDD2D9'}`, borderRadius: 999, fontSize: 11, fontWeight: active ? 600 : 400, background: active ? '#EEF5FB' : '#fff', color: active ? '#004B8D' : '#515760', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 80ms' }}>{label}</button>
@@ -3900,7 +4069,7 @@ function KnowledgeBasePage() {
 }
 
 const ENG_NAV: NavItem[] = [
-  { key: 'overview',       label: '总览',         sub: '数据看板 · 快捷入口',  icon: <IconHome /> },
+  { key: 'overview',       label: '总览',         sub: '核心指标 · 待办事项',  icon: <IconHome /> },
   { key: 'op-records',     label: '操作记录',     sub: '历史执行 · 分析对比', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
   { key: 'plan-manage',    label: '预案管理',     sub: '组态 · 启用 · 版本', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
   { key: 'hazard-manage',  label: '隐患管理',     sub: '登记 · 预案关联 · 触发', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
@@ -3913,7 +4082,7 @@ const ADMIN_NAV: NavItem[] = [
 ]
 
 const SUP_NAV: NavItem[] = [
-  { key: 'overview',    label: '总览',     sub: '数据看板 · 快捷入口',  icon: <IconHome /> },
+  { key: 'overview',    label: '总览',     sub: '核心指标 · 隐患提醒',  icon: <IconHome /> },
   { key: 'op-records',  label: '操作记录', sub: '历史执行 · 分析对比', icon: <IconRecords /> },
   { key: 'plan-manage', label: '预案管理', sub: '工段 · 状态 · 启用',   icon: <IconPlan /> },
 ]
@@ -4047,7 +4216,7 @@ export default function Scene3({ role: defaultRole = 'engineer', onActivate }: P
         <div style={{ flex: 1 }} />
         {/* Role switcher */}
         <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: 3 }}>
-          {([['engineer', '工艺工程师'], ['supervisor', '班长'], ['manager', '装置经理'], ['admin', '系统管理员']] as [Role, string][]).map(([r, label]) => (
+          {([['manager', '装置经理'], ['engineer', '工艺工程师'], ['supervisor', '班长'], ['admin', '系统管理员']] as [Role, string][]).map(([r, label]) => (
             <button
               key={r}
               onClick={() => setRole(r)}
